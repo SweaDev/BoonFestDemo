@@ -76,7 +76,10 @@ export interface GameSessionState {
   attributes: PlayerAttributes;
   hue: number; // 0 to 120
   entropyDecayRate: number; // degrees per second
-  redAlertSecondsRemaining: number; // 5.0 to 0.0
+  effectiveDecayRate?: number; // after Body dampener
+  slothRateMultiplier?: number;
+  paceMultiplier?: number;
+  redAlertSecondsRemaining: number; // 8.0 to 0.0
   activeCards: CardPayload[];
   hiddenCards: Record<string, HiddenSlothData>;
   activePhantoms: ActivePhantomCredit[];
@@ -167,5 +170,8 @@ export interface ExecuteCardResult {
     hue: number;
     activeCards: CardPayload[];
     activePhantoms: ActivePhantomCredit[];
+    entropyDecayRate?: number;
+    effectiveDecayRate?: number;
+    paceMultiplier?: number;
   };
 }

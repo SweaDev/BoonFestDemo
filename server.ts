@@ -34,9 +34,12 @@ function createNewGameSession(sessionId: string, username: string, isGuest: bool
     credits: 100,
     boonPoints: 0,
     attributes: { mind: 1, body: 1, spirit: 1 },
-    hue: 60, // Starts at Yellow (60°)
-    entropyDecayRate: 0.9, // Degrees per second baseline
-    redAlertSecondsRemaining: 5.0,
+    hue: 95, // Starts at a tranquil, healthy Lime-Green (95° / 120°) so player has time to read & plan
+    entropyDecayRate: 0.18, // Slower to start (0.18°/s base) and speeds up dynamically as time passes
+    effectiveDecayRate: 0.18,
+    slothRateMultiplier: 1.0,
+    paceMultiplier: 1.0,
+    redAlertSecondsRemaining: 8.0, // Generous 8.0s buffer at 0° red before collapse
     activeCards: [],
     hiddenCards: {},
     activePhantoms: [],
@@ -51,6 +54,38 @@ function createNewGameSession(sessionId: string, username: string, isGuest: bool
   drawHandForSession(state);
   activeSessions[sessionId] = state;
   return state;
+}
+
+// Calculate dynamic entropy decay rate: starts slow and escalates smoothly as time progresses
+function updateSessionDecayRate(session: GameSessionState): { effectiveDecayRate: number; paceMultiplier: number } {
+  const elapsedSeconds = session.totalRunPlaySeconds || 0;
+  const elapsedMinutes = elapsedSeconds / 60;
+
+  // Base starting speed is 0.18°/s (gentle, relaxing pace)
+  // Accelerates steadily as time goes:
+  // Minute 0: ~0.18°/s (1.0x pace)
+  // Minute 1: ~0.31°/s (~1.7x pace)
+  // Minute 2: ~0.48°/s (~2.7x pace)
+  // Minute 3: ~0.72°/s (~4.0x pace)
+  // Minute 5: ~1.28°/s (~7.1x pace)
+  // Minute 8: ~2.10°/s
+  // Minute 10+: capped around 3.2°/s (intense endgame speed)
+  const timeEscalation = 0.18 + 0.12 * elapsedMinutes + 0.016 * Math.pow(elapsedMinutes, 1.85);
+  const cappedBaseRate = Math.min(3.2, timeEscalation);
+
+  // Sloth multiplier from any triggered traps
+  const slothMult = session.slothRateMultiplier || 1.0;
+  session.entropyDecayRate = cappedBaseRate * slothMult;
+
+  // Body slows entropy decay by 18% per level above 1
+  const bodyDampener = Math.pow(0.82, Math.max(0, session.attributes.body - 1));
+  const effective = session.entropyDecayRate * bodyDampener;
+
+  session.effectiveDecayRate = effective;
+  // Pace multiplier relative to starting baseline (0.18 deg/s)
+  session.paceMultiplier = Math.round((session.entropyDecayRate / 0.18) * 10) / 10;
+
+  return { effectiveDecayRate: effective, paceMultiplier: session.paceMultiplier };
 }
 
 // Helper to assemble a deck with Earn, Grow, Boon, and a deceptive Sloth card (instant execution)
@@ -141,6 +176,9 @@ app.get('/api/session', (req, res) => {
       isGameOver: session.isGameOver,
       isPaused: session.isPaused,
       redAlertSecondsRemaining: session.redAlertSecondsRemaining,
+      entropyDecayRate: session.entropyDecayRate,
+      effectiveDecayRate: session.effectiveDecayRate,
+      paceMultiplier: session.paceMultiplier,
       activePhantoms: session.activePhantoms,
     },
   });
@@ -264,7 +302,10 @@ app.post('/api/game/new', async (req, res) => {
       activeCards: cards,
       isGameOver: false,
       isPaused: false,
-      redAlertSecondsRemaining: 5.0,
+      redAlertSecondsRemaining: session.redAlertSecondsRemaining,
+      entropyDecayRate: session.entropyDecayRate,
+      effectiveDecayRate: session.effectiveDecayRate,
+      paceMultiplier: session.paceMultiplier,
       activePhantoms: [],
     },
     pacing,
@@ -356,13 +397,15 @@ app.post('/api/cards/execute', async (req, res) => {
 
     // Hidden Sloth Penalties:
     // 1. Entropy acceleration
-    session.entropyDecayRate = Math.min(3.5, session.entropyDecayRate * penalty.entropyRateMultiplier);
+    session.slothRateMultiplier = Math.min(3.0, (session.slothRateMultiplier || 1.0) * penalty.entropyRateMultiplier);
+    const { effectiveDecayRate: slothEffectiveRate, paceMultiplier: slothPace } = updateSessionDecayRate(session);
     // 2. Entropy immediate red spike
     session.hue = Math.max(0, session.hue - penalty.entropySpike);
     // 3. Attribute degradation
     if (penalty.attributeDrop) {
       const { pillar, amount } = penalty.attributeDrop;
       session.attributes[pillar] = Math.max(1, session.attributes[pillar] - amount);
+      updateSessionDecayRate(session);
     }
 
     executeResult = {
@@ -380,6 +423,9 @@ app.post('/api/cards/execute', async (req, res) => {
         hue: session.hue,
         activeCards: [],
         activePhantoms: session.activePhantoms,
+        entropyDecayRate: session.entropyDecayRate,
+        effectiveDecayRate: session.effectiveDecayRate,
+        paceMultiplier: session.paceMultiplier,
       },
     };
   } else {
@@ -393,7 +439,8 @@ app.post('/api/cards/execute', async (req, res) => {
     if (isFundedByPhantom && (card.category === 'boon' || card.category === 'grow')) {
       // Default Fraud triggered!
       session.hue = Math.max(0, session.hue - 30); // Spike entropy
-      session.entropyDecayRate = Math.min(4.0, session.entropyDecayRate * 1.3);
+      session.slothRateMultiplier = Math.min(3.5, (session.slothRateMultiplier || 1.0) * 1.3);
+      updateSessionDecayRate(session);
 
       executeResult = {
         success: false,
@@ -409,6 +456,9 @@ app.post('/api/cards/execute', async (req, res) => {
           hue: session.hue,
           activeCards: [],
           activePhantoms: session.activePhantoms,
+          entropyDecayRate: session.entropyDecayRate,
+          effectiveDecayRate: session.effectiveDecayRate,
+          paceMultiplier: session.paceMultiplier,
         },
       };
     } else {
@@ -425,6 +475,9 @@ app.post('/api/cards/execute', async (req, res) => {
       } else if (card.category === 'grow') {
         if (card.targetPillar) {
           session.attributes[card.targetPillar] += 1;
+          if (card.targetPillar === 'body') {
+            updateSessionDecayRate(session);
+          }
         }
       } else if (card.category === 'boon') {
         // Boosted by Spirit (+25% score multiplier, +20% hue recovery per Spirit level above 1)
@@ -437,7 +490,7 @@ app.post('/api/cards/execute', async (req, res) => {
         session.boonPoints += boonPointsDelta;
         session.hue = Math.min(120, session.hue + hueDelta);
         // Boons also restore red alert buffer
-        session.redAlertSecondsRemaining = 5.0;
+        session.redAlertSecondsRemaining = 8.0;
       }
 
       executeResult = {
@@ -458,6 +511,9 @@ app.post('/api/cards/execute', async (req, res) => {
           hue: session.hue,
           activeCards: [],
           activePhantoms: session.activePhantoms,
+          entropyDecayRate: session.entropyDecayRate,
+          effectiveDecayRate: session.effectiveDecayRate,
+          paceMultiplier: session.paceMultiplier,
         },
       };
     }
@@ -479,16 +535,16 @@ app.post('/api/game/tick', (req, res) => {
   }
 
   const dt = Math.min(deltaSeconds || 1.0, 3.0);
+  session.totalRunPlaySeconds = (session.totalRunPlaySeconds || 0) + dt;
 
-  // Body slows baseline entropy acceleration (decay rate is reduced by 18% per body level above 1)
-  const bodyDampener = Math.pow(0.82, session.attributes.body - 1);
-  const effectiveDecayRate = session.entropyDecayRate * bodyDampener;
+  // Dynamically update decay rate based on run progression time
+  const { effectiveDecayRate, paceMultiplier } = updateSessionDecayRate(session);
 
   // Slowly shift hue toward 0° (Crimson Red)
   session.hue = Math.max(0, session.hue - effectiveDecayRate * dt);
 
   // Red Alert condition:
-  // "If the border reaches 100% pure Red and remains uncorrected for 5 continuous seconds, the run terminates immediately in a Game Over."
+  // "If the border reaches 100% pure Red and remains uncorrected for 8 continuous seconds, the run terminates in Game Over."
   let isGameOverNow = false;
   if (session.hue <= 0.05) {
     session.hue = 0;
@@ -498,13 +554,17 @@ app.post('/api/game/tick', (req, res) => {
       isGameOverNow = true;
     }
   } else {
-    // Recover red alert timer back to 5.0s when hue > 0°
-    session.redAlertSecondsRemaining = Math.min(5.0, session.redAlertSecondsRemaining + dt * 0.5);
+    // Recover red alert timer back to 8.0s when hue > 0°
+    session.redAlertSecondsRemaining = Math.min(8.0, session.redAlertSecondsRemaining + dt * 0.8);
   }
 
   res.json({
     hue: session.hue,
     redAlertSecondsRemaining: session.redAlertSecondsRemaining,
+    entropyDecayRate: session.entropyDecayRate,
+    effectiveDecayRate,
+    paceMultiplier,
+    runElapsedSeconds: Math.round(session.totalRunPlaySeconds),
     isGameOver: isGameOverNow,
   });
 });

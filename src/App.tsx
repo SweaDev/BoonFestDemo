@@ -36,8 +36,12 @@ export default function App() {
   const [credits, setCredits] = useState(100);
   const [boonPoints, setBoonPoints] = useState(0);
   const [attributes, setAttributes] = useState<PlayerAttributes>({ mind: 1, body: 1, spirit: 1 });
-  const [hue, setHue] = useState(60);
-  const [redAlertSecondsRemaining, setRedAlertSecondsRemaining] = useState(5.0);
+  const [hue, setHue] = useState(95);
+  const [redAlertSecondsRemaining, setRedAlertSecondsRemaining] = useState(8.0);
+  const [decayRate, setDecayRate] = useState(0.18);
+  const [effectiveDecayRate, setEffectiveDecayRate] = useState(0.18);
+  const [paceMultiplier, setPaceMultiplier] = useState(1.0);
+  const [runElapsedSeconds, setRunElapsedSeconds] = useState(0);
   const [activeCards, setActiveCards] = useState<CardPayload[]>([]);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [activePhantoms, setActivePhantoms] = useState<ActivePhantomCredit[]>([]);
@@ -110,7 +114,10 @@ export default function App() {
           setAttributes(data.gameState.attributes);
           setHue(data.gameState.hue);
           setActivePhantoms(data.gameState.activePhantoms || []);
-          setRedAlertSecondsRemaining(data.gameState.redAlertSecondsRemaining ?? 5.0);
+          setRedAlertSecondsRemaining(data.gameState.redAlertSecondsRemaining ?? 8.0);
+          if (data.gameState.entropyDecayRate !== undefined) setDecayRate(data.gameState.entropyDecayRate);
+          if (data.gameState.effectiveDecayRate !== undefined) setEffectiveDecayRate(data.gameState.effectiveDecayRate);
+          if (data.gameState.paceMultiplier !== undefined) setPaceMultiplier(data.gameState.paceMultiplier);
 
           if (data.gameState.activeCards && data.gameState.activeCards.length > 0) {
             setActiveCards(data.gameState.activeCards);
@@ -161,6 +168,10 @@ export default function App() {
           if (data.hue !== undefined) {
             setHue(data.hue);
             setRedAlertSecondsRemaining(data.redAlertSecondsRemaining);
+            if (data.entropyDecayRate !== undefined) setDecayRate(data.entropyDecayRate);
+            if (data.effectiveDecayRate !== undefined) setEffectiveDecayRate(data.effectiveDecayRate);
+            if (data.paceMultiplier !== undefined) setPaceMultiplier(data.paceMultiplier);
+            if (data.runElapsedSeconds !== undefined) setRunElapsedSeconds(data.runElapsedSeconds);
 
             // Warning sound if near red collapse
             if (data.hue <= 2 && data.redAlertSecondsRemaining <= 4.0) {
@@ -247,6 +258,9 @@ export default function App() {
         setHue(result.newGameState.hue);
         setActiveCards(result.newGameState.activeCards);
         setActivePhantoms(result.newGameState.activePhantoms || []);
+        if (result.newGameState.entropyDecayRate !== undefined) setDecayRate(result.newGameState.entropyDecayRate);
+        if (result.newGameState.effectiveDecayRate !== undefined) setEffectiveDecayRate(result.newGameState.effectiveDecayRate);
+        if (result.newGameState.paceMultiplier !== undefined) setPaceMultiplier(result.newGameState.paceMultiplier);
         setFocusedIndex(0);
 
         // Sound cues & notifications
@@ -298,7 +312,11 @@ export default function App() {
         setHue(data.gameState.hue);
         setActiveCards(data.gameState.activeCards);
         setActivePhantoms([]);
-        setRedAlertSecondsRemaining(5.0);
+        setRedAlertSecondsRemaining(data.gameState.redAlertSecondsRemaining ?? 8.0);
+        setDecayRate(data.gameState.entropyDecayRate ?? 0.18);
+        setEffectiveDecayRate(data.gameState.effectiveDecayRate ?? 0.18);
+        setPaceMultiplier(data.gameState.paceMultiplier ?? 1.0);
+        setRunElapsedSeconds(0);
         setIsGameOver(false);
         setGameOverData(null);
         setFocusedIndex(0);
@@ -454,7 +472,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#8a8f98]">
               World Survival State
             </span>
@@ -468,9 +486,29 @@ export default function App() {
             >
               {Math.round(clampedHue)}° / 120° HSL
             </span>
+
+            {/* Dynamic Progressive Pace Badge */}
+            <div
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[11px] font-mono font-bold transition-colors ${
+                paceMultiplier <= 1.3
+                  ? 'border-[#00ff95]/40 bg-[#00ff95]/10 text-[#00ff95]'
+                  : paceMultiplier <= 2.3
+                  ? 'border-[#ffb800]/40 bg-[#ffb800]/10 text-[#ffb800]'
+                  : 'border-[#ff3b5c]/50 bg-[#ff3b5c]/15 text-[#ff3b5c] animate-pulse'
+              }`}
+              title="Entropy Pace: Begins calm & gentle at 1.0x (0.18°/s) and accelerates progressively as time passes. Upgrade Body to dampen effective decay by 18% per level."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              <span>
+                Pace {paceMultiplier.toFixed(1)}x ({paceMultiplier <= 1.3 ? 'Gentle' : paceMultiplier <= 2.3 ? 'Accelerating' : 'Surging'})
+              </span>
+              <span className="opacity-75 text-[10px]">
+                (-{effectiveDecayRate.toFixed(2)}°/s)
+              </span>
+            </div>
           </div>
-          <span className="text-[11px] text-[#525866] max-w-sm mt-0.5">
-            Systemic entropy pulls toward 0° red. Enact societal Boons to recover toward 120° emerald flourishing.
+          <span className="text-[11px] text-[#525866] max-w-sm mt-1">
+            Starts slow and speeds up over time. Enact societal Boons to recover toward 120° emerald flourishing.
           </span>
         </div>
 

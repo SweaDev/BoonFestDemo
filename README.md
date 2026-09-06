@@ -49,10 +49,13 @@ Each turn, a curated hand of action cards is drawn into an interactive 3D perspe
 
 ---
 
-### 3. The Entropy & Hue Dynamic
-* **Hue Spectrum**: Ranging from **120° (Verdant Green)** down to **0° (Crimson Red)**.
-* **Passive Decay**: Society decays naturally over time; higher **Body** attributes slow this rate.
-* **Red Alert Threshold**: When Hue drops to **0°**, a critical 5-second countdown initiates. If you fail to enact an altruistic Boon card or counter entropy before the timer reaches zero, the run terminates in **Ecosystem Collapse**.
+### 3. The Progressive Entropy & Hue Dynamic
+* **Hue Spectrum**: Ranging from **120° (Verdant Green)** down to **0° (Crimson Red)**. Runs begin at a tranquil **95° Lime Green** buffer.
+* **Progressive Acceleration Pacing**:
+  * **Slower to Start**: Begins at a calm, deliberate **1.0x baseline pace (0.18°/s)** so players have ample time to read card descriptions, inspect pillars, and formulate their economic strategy.
+  * **Time-Scalable Acceleration**: As run duration increases, systemic entropy smoothly accelerates over time (ramping from ~0.3°/s at 1 minute up to ~2.1°/s+ in deep runs), intensifying the pressure to maintain balanced Boon loops.
+  * **Body Dampening**: Higher **Body** attributes dampen effective entropy decay by 18% per level, rewarding players who cultivate resilience.
+* **Red Alert Grace Window**: When Hue drops to **0°**, a critical **8-second countdown** initiates. Enacting an altruistic Boon card or mitigating entropy before the countdown expires restores the buffer and averts **Ecosystem Collapse**.
 
 ---
 

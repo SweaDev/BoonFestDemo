@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #0c0d10;
+    --surface-header: #151619;
+    --surface-card: #131418;
+    --surface-hover: #1a1c22;
+    --border-subtle: #22242a;
+    --accent-boon: #00ff95;
+    --accent-capital: #ffb800;
+    --accent-grow: #00d4ff;
+    --accent-danger: #ff3b5c;
+    --text-primary: #f0f2f5;
+    --text-secondary: #8a8f98;
+    --text-muted: #525866;
+  }
+
+  body {
+    background-color: #0c0d10;
+    color: #f0f2f5;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+  }
+}
+
+/* High Density Grid Background */
+.bg-high-density-grid {
+  background-color: #0c0d10;
+  background-size: 28px 28px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+}
+
+/* Custom High Density Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0c0d10;
+}
+::-webkit-scrollbar-thumb {
+  background: #22242a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #32353e;
+}

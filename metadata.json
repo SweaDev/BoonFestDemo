@@ -1,0 +1,6 @@
+{
+  "name": "BoonFest",
+  "description": "An anti-sloth, pro-social web game balancing capital accumulation, self-growth, and societal welfare through generative altruism.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

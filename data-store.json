@@ -1,0 +1,196 @@
+{
+  "users": {
+    "tester": {
+      "username": "Tester",
+      "createdAt": 1788719892548,
+      "runsCount": 1,
+      "trophies": [],
+      "runs": [
+        {
+          "runId": "run_1788719888913",
+          "username": "Tester",
+          "isGuest": false,
+          "durationSeconds": 7,
+          "credits": 100,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 60,
+          "date": "2026-09-06"
+        }
+      ]
+    }
+  },
+  "playtimeLogs": {
+    "Guest": [
+      {
+        "timestamp": 1788719654387,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719659387,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719664387,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719669391,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719674386,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719679384,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719684390,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719689386,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719694389,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719699386,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788719704392,
+        "durationSeconds": 5
+      }
+    ]
+  },
+  "leaderboard": [
+    {
+      "id": "lead_1",
+      "username": "GaiaSteward",
+      "score": 3450,
+      "runDurationSeconds": 275,
+      "date": "2026-09-02",
+      "behaviorArchetype": "The Planetary Architect",
+      "boonCount": 7,
+      "mind": 4,
+      "body": 3,
+      "spirit": 5
+    },
+    {
+      "id": "lead_2",
+      "username": "CivicHarmonist",
+      "score": 2890,
+      "runDurationSeconds": 260,
+      "date": "2026-09-03",
+      "behaviorArchetype": "The Luminous Benefactor",
+      "boonCount": 6,
+      "mind": 3,
+      "body": 4,
+      "spirit": 4
+    },
+    {
+      "id": "lead_3",
+      "username": "PranaFlow",
+      "score": 2420,
+      "runDurationSeconds": 245,
+      "date": "2026-09-04",
+      "behaviorArchetype": "The Serene Ascetic",
+      "boonCount": 5,
+      "mind": 3,
+      "body": 5,
+      "spirit": 3
+    },
+    {
+      "id": "lead_4",
+      "username": "MicrogridPioneer",
+      "score": 1980,
+      "runDurationSeconds": 220,
+      "date": "2026-09-04",
+      "behaviorArchetype": "The Systems Engineer",
+      "boonCount": 4,
+      "mind": 5,
+      "body": 2,
+      "spirit": 3
+    },
+    {
+      "id": "lead_5",
+      "username": "HeirloomKeeper",
+      "score": 1650,
+      "runDurationSeconds": 200,
+      "date": "2026-09-05",
+      "behaviorArchetype": "The Regenerative Farmer",
+      "boonCount": 4,
+      "mind": 2,
+      "body": 3,
+      "spirit": 4
+    },
+    {
+      "id": "lead_6",
+      "username": "AuraRestorer",
+      "score": 1420,
+      "runDurationSeconds": 190,
+      "date": "2026-09-05",
+      "behaviorArchetype": "The Empathic Healer",
+      "boonCount": 3,
+      "mind": 3,
+      "body": 3,
+      "spirit": 4
+    },
+    {
+      "id": "lead_7",
+      "username": "SolarCommune",
+      "score": 1180,
+      "runDurationSeconds": 175,
+      "date": "2026-09-05",
+      "behaviorArchetype": "The Cooperative Anchor",
+      "boonCount": 3,
+      "mind": 4,
+      "body": 2,
+      "spirit": 2
+    },
+    {
+      "id": "lead_8",
+      "username": "CleanWaters",
+      "score": 960,
+      "runDurationSeconds": 160,
+      "date": "2026-09-06",
+      "behaviorArchetype": "The Watershed Sentinel",
+      "boonCount": 2,
+      "mind": 2,
+      "body": 3,
+      "spirit": 3
+    },
+    {
+      "id": "lead_9",
+      "username": "UrbanCanopy",
+      "score": 840,
+      "runDurationSeconds": 145,
+      "date": "2026-09-06",
+      "behaviorArchetype": "The Canopy Guardian",
+      "boonCount": 2,
+      "mind": 3,
+      "body": 2,
+      "spirit": 2
+    },
+    {
+      "id": "lead_10",
+      "username": "KindredSpirit",
+      "score": 720,
+      "runDurationSeconds": 130,
+      "date": "2026-09-06",
+      "behaviorArchetype": "The Mindful Novice",
+      "boonCount": 2,
+      "mind": 2,
+      "body": 2,
+      "spirit": 2
+    }
+  ]
+}

@@ -174,3 +174,17 @@ The server will start listening on port `3000` (or the port defined by your cont
 
 * **Boon Points**: The primary measure of your societal legacy.
 * **Top 10 Hall of Fame**: Enduring runs with high Boon point yields qualify for the global leaderboard and unlock celebratory digital trophies.
+
+---
+
+## 🛠️ Developer User & Session Management
+
+* **Logout Functionality**: Players can log out at any time via the Header bar or Settings modal (`⚙️`), immediately returning to an untracked Guest session.
+* **Main Dev Account (`@dev`)**:
+  - The `dev` user has **zero time restrictions**—the 5-minute per 30-minute rolling rule and 25-minute daily cap are completely bypassed.
+  - In development, dev access is open by default. The Dev user can set or update a production password directly from **Settings > Dev Security**. Once configured, unauthorized users cannot access dev mode without this password.
+* **Temporary Dev Status**:
+  - The Main Dev user can grant temporary dev status to any registered player account for a specified duration (e.g. *n* hours or days).
+  - Granted accounts enjoy unrestricted playtime with all anti-sloth time locks waived until their temporary grant expires.
+  - The Main Dev can inspect active grants and revoke them at any time from **Settings > Grant Dev Status**.
+

@@ -16,6 +16,7 @@ import { GameOverModal } from './components/GameOverModal';
 import { TrophyCaseModal } from './components/TrophyCaseModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { RulesModal } from './components/RulesModal';
+import { SettingsModal } from './components/SettingsModal';
 import { NotificationToast, ToastMessage } from './components/NotificationToast';
 import { sounds } from './lib/sound';
 import { Sparkles, HeartHandshake, Shield, AlertTriangle } from 'lucide-react';
@@ -61,6 +62,7 @@ export default function App() {
   const [profileTargetUser, setProfileTargetUser] = useState(username);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [gameOverData, setGameOverData] = useState<GameOverResponse | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isMuted, setIsMuted] = useState(sounds.getIsMuted());
@@ -391,28 +393,60 @@ export default function App() {
     }
   };
 
-  // Switch or Login existing user
-  const handleSwitchUser = async (targetUser: string): Promise<boolean> => {
+  // Logout handler
+  const handleLogout = async () => {
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: targetUser, sessionId }),
+        body: JSON.stringify({ sessionId }),
       });
 
       if (res.ok) {
         const data = await res.json();
+        setUsername('Guest');
+        setIsGuest(true);
+        localStorage.removeItem('boonfest_username');
+        if (data.pacing) {
+          setPlaytimeStats(data.pacing);
+        }
+        addToast('info', 'Logged out successfully. You are now playing as Guest.');
+      }
+    } catch {
+      addToast('error', 'Logout request failed.');
+    }
+  };
+
+  // Login handler supporting password for dev user
+  const handleLogin = async (targetUser: string, password?: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: targetUser, password, sessionId }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
         setUsername(data.user.username);
-        setIsGuest(false);
+        setIsGuest(data.user.username.toLowerCase() === 'guest');
         setPlaytimeStats(data.pacing);
         localStorage.setItem('boonfest_username', data.user.username);
         addToast('success', `Logged in as @${data.user.username}.`);
         return true;
+      } else {
+        addToast('error', data.error || 'Login failed.');
+        return false;
       }
     } catch {
       addToast('error', 'Login error.');
+      return false;
     }
-    return false;
+  };
+
+  // Switch or Login existing user
+  const handleSwitchUser = async (targetUser: string): Promise<boolean> => {
+    return handleLogin(targetUser);
   };
 
   const clampedHue = Math.max(0, Math.min(120, hue));
@@ -440,6 +474,8 @@ export default function App() {
         }}
         onOpenLeaderboard={() => setShowLeaderboard(true)}
         onOpenRules={() => setShowRules(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        onLogout={handleLogout}
       />
 
       {/* Main Game Stage */}
@@ -599,6 +635,18 @@ export default function App() {
 
       {/* Game Rules / Codex Modal */}
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+
+      {/* Settings & Dev Management Modal */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        currentUsername={username}
+        isGuest={isGuest}
+        pacing={playtimeStats}
+        onLogout={handleLogout}
+        onLogin={handleLogin}
+        onAddToast={addToast}
+      />
 
       {/* Notification Toasts */}
       <NotificationToast toasts={toasts} onDismiss={removeToast} />

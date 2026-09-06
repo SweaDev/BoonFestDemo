@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { LeaderboardEntry, PlaytimeStats, RunTelemetry, Trophy, UserSession } from '../src/types';
+import { DevGrantRecord, LeaderboardEntry, PlaytimeStats, RunTelemetry, Trophy, UserSession } from '../src/types';
 
 interface PlayInterval {
   timestamp: number;
@@ -15,12 +15,19 @@ interface UserRecord {
   runs: RunTelemetry[];
   lockoutUntil?: number;
   lockoutReason?: '30m_rule' | '24h_cap';
+  devGrantedUntil?: number;
+  devGrantedBy?: string;
+  devGrantedAt?: number;
 }
 
 interface DBData {
   users: Record<string, UserRecord>;
   playtimeLogs: Record<string, PlayInterval[]>;
   leaderboard: LeaderboardEntry[];
+  devConfig?: {
+    password?: string;
+    updatedAt?: number;
+  };
 }
 
 const DB_FILE_PATH = path.join(process.cwd(), 'data-store.json');
@@ -157,19 +164,39 @@ class StorageManager {
   }
 
   private loadData(): DBData {
+    let parsed: DBData = {
+      users: {},
+      playtimeLogs: {},
+      leaderboard: [...INITIAL_LEADERBOARD],
+      devConfig: {},
+    };
+
     try {
       if (fs.existsSync(DB_FILE_PATH)) {
         const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
-        return JSON.parse(raw);
+        parsed = JSON.parse(raw);
       }
     } catch (err) {
       console.warn('Failed to read data store file, initializing fresh store:', err);
     }
-    return {
-      users: {},
-      playtimeLogs: {},
-      leaderboard: [...INITIAL_LEADERBOARD],
-    };
+
+    if (!parsed.users) parsed.users = {};
+    if (!parsed.playtimeLogs) parsed.playtimeLogs = {};
+    if (!parsed.leaderboard) parsed.leaderboard = [...INITIAL_LEADERBOARD];
+    if (!parsed.devConfig) parsed.devConfig = {};
+
+    // Ensure the default Main Dev user exists
+    if (!parsed.users['dev']) {
+      parsed.users['dev'] = {
+        username: 'dev',
+        createdAt: Date.now(),
+        runsCount: 0,
+        trophies: [],
+        runs: [],
+      };
+    }
+
+    return parsed;
   }
 
   private persist() {
@@ -240,11 +267,115 @@ class StorageManager {
     this.persist();
   }
 
+  // Dev System & Authorization
+  public isUserDev(username: string): { isDev: boolean; isMainDev: boolean; isTemporaryDev: boolean; devGrantedUntil?: number } {
+    const clean = (username || '').toLowerCase().trim();
+    if (clean === 'dev') {
+      return { isDev: true, isMainDev: true, isTemporaryDev: false };
+    }
+    const user = this.data.users[clean];
+    if (user && user.devGrantedUntil && user.devGrantedUntil > Date.now()) {
+      return { isDev: true, isMainDev: false, isTemporaryDev: true, devGrantedUntil: user.devGrantedUntil };
+    }
+    return { isDev: false, isMainDev: false, isTemporaryDev: false };
+  }
+
+  public getDevPassword(): string | undefined {
+    return this.data.devConfig?.password;
+  }
+
+  public setDevPassword(password: string): void {
+    if (!this.data.devConfig) {
+      this.data.devConfig = {};
+    }
+    this.data.devConfig.password = password ? password.trim() : undefined;
+    this.data.devConfig.updatedAt = Date.now();
+    this.persist();
+  }
+
+  public verifyDevPassword(input?: string): boolean {
+    const pass = this.getDevPassword();
+    if (!pass) return true; // No password set yet: open dev access
+    return pass === (input || '').trim();
+  }
+
+  public grantDevStatus(targetUsername: string, durationSeconds: number, grantedBy: string = 'dev'): { success: boolean; expiresAt: number } {
+    const clean = targetUsername.toLowerCase().trim();
+    if (!this.data.users[clean]) {
+      this.registerUser(targetUsername);
+    }
+    const now = Date.now();
+    const expiresAt = now + Math.max(60, durationSeconds) * 1000;
+    const user = this.data.users[clean];
+    user.devGrantedUntil = expiresAt;
+    user.devGrantedBy = grantedBy;
+    user.devGrantedAt = now;
+    // Clear any active lockout for this user
+    user.lockoutUntil = undefined;
+    user.lockoutReason = undefined;
+    this.persist();
+    return { success: true, expiresAt };
+  }
+
+  public revokeDevStatus(targetUsername: string): boolean {
+    const clean = targetUsername.toLowerCase().trim();
+    const user = this.data.users[clean];
+    if (user) {
+      delete user.devGrantedUntil;
+      delete user.devGrantedBy;
+      delete user.devGrantedAt;
+      this.persist();
+      return true;
+    }
+    return false;
+  }
+
+  public getDevGrants(): DevGrantRecord[] {
+    const now = Date.now();
+    const grants: DevGrantRecord[] = [];
+    for (const user of Object.values(this.data.users)) {
+      if (user.devGrantedUntil && user.devGrantedUntil > now) {
+        grants.push({
+          username: user.username,
+          grantedAt: user.devGrantedAt || now,
+          expiresAt: user.devGrantedUntil,
+          grantedBy: user.devGrantedBy || 'dev',
+          remainingSeconds: Math.max(0, Math.ceil((user.devGrantedUntil - now) / 1000)),
+        });
+      }
+    }
+    return grants.sort((a, b) => b.expiresAt - a.expiresAt);
+  }
+
+  public getAllRegisteredUsers(): string[] {
+    return Object.values(this.data.users)
+      .map(u => u.username)
+      .filter(name => name.toLowerCase() !== 'dev');
+  }
+
   // Anti-Sloth Pacing Engine:
   // - 30-Minute Rolling Rule: Max 5 cumulative minutes (300s) active play. Once reached, locks for 25 continuous minutes.
   // - 24-Hour Daily Cap: Max 25 cumulative minutes (1500s) active play in rolling 24h.
+  // Dev user and temporarily granted dev users have zero restrictions!
   public checkPacing(userId: string): PlaytimeStats {
     const now = Date.now();
+    const devInfo = this.isUserDev(userId);
+
+    // Dev users and granted dev status holders bypass all time restrictions
+    if (devInfo.isDev) {
+      return {
+        activeSecondsIn30m: 0,
+        activeSecondsIn24h: 0,
+        isLockedOut: false,
+        lockoutRemainingSeconds: 0,
+        isDev: true,
+        isMainDev: devInfo.isMainDev,
+        isTemporaryDev: devInfo.isTemporaryDev,
+        devGrantedUntil: devInfo.devGrantedUntil,
+        devGrantedRemainingSeconds: devInfo.devGrantedUntil ? Math.max(0, Math.ceil((devInfo.devGrantedUntil - now) / 1000)) : undefined,
+      };
+    }
+
     const user = this.data.users[userId.toLowerCase()];
 
     // Check active explicit lockout
@@ -257,6 +388,7 @@ class StorageManager {
         lockoutReason: user.lockoutReason || '30m_rule',
         lockoutRemainingSeconds: remainingSec,
         nextPlayAvailableAt: user.lockoutUntil,
+        isDev: false,
       };
     }
 
@@ -288,6 +420,7 @@ class StorageManager {
         lockoutReason: '24h_cap',
         lockoutRemainingSeconds,
         nextPlayAvailableAt: clearAt,
+        isDev: false,
       };
     }
 
@@ -308,6 +441,7 @@ class StorageManager {
         lockoutReason: '30m_rule',
         lockoutRemainingSeconds: 25 * 60,
         nextPlayAvailableAt: lockoutUntil,
+        isDev: false,
       };
     }
 
@@ -316,10 +450,17 @@ class StorageManager {
       activeSecondsIn24h,
       isLockedOut: false,
       lockoutRemainingSeconds: 0,
+      isDev: false,
     };
   }
 
   public recordPlaytime(userId: string, seconds: number): PlaytimeStats {
+    // Dev users have zero time restrictions and do not accumulate limiting play logs
+    const devInfo = this.isUserDev(userId);
+    if (devInfo.isDev) {
+      return this.checkPacing(userId);
+    }
+
     const now = Date.now();
     if (!this.data.playtimeLogs[userId]) {
       this.data.playtimeLogs[userId] = [];

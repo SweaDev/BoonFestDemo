@@ -58,6 +58,26 @@ export interface PlaytimeStats {
   lockoutReason?: '30m_rule' | '24h_cap';
   lockoutRemainingSeconds: number;
   nextPlayAvailableAt?: number;
+  isDev?: boolean;
+  isMainDev?: boolean;
+  isTemporaryDev?: boolean;
+  devGrantedUntil?: number;
+  devGrantedRemainingSeconds?: number;
+}
+
+export interface DevGrantRecord {
+  username: string;
+  grantedAt: number;
+  expiresAt: number;
+  grantedBy: string;
+  remainingSeconds: number;
+}
+
+export interface DevConfigStatus {
+  isMainDev: boolean;
+  hasPassword: boolean;
+  activeGrants: DevGrantRecord[];
+  registeredUsers: string[];
 }
 
 export interface ActivePhantomCredit {
@@ -96,6 +116,10 @@ export interface UserSession {
   isGuest: boolean;
   firstRunFinished: boolean;
   createdAt: number;
+  isDev?: boolean;
+  isMainDev?: boolean;
+  isTemporaryDev?: boolean;
+  devGrantedUntil?: number;
 }
 
 export interface Trophy {

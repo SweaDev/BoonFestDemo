@@ -13,6 +13,10 @@ import {
   Clock,
   User,
   AlertCircle,
+  Settings,
+  LogOut,
+  Crown,
+  ShieldCheck,
 } from 'lucide-react';
 import { ActivePhantomCredit, PlayerAttributes, PlaytimeStats } from '../types';
 
@@ -30,6 +34,8 @@ interface HeaderBarProps {
   onOpenProfile: () => void;
   onOpenLeaderboard: () => void;
   onOpenRules: () => void;
+  onOpenSettings: () => void;
+  onLogout: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -46,6 +52,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenProfile,
   onOpenLeaderboard,
   onOpenRules,
+  onOpenSettings,
+  onLogout,
 }) => {
   const clampedHue = Math.max(0, Math.min(120, hue));
 
@@ -162,22 +170,49 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
 
         {/* Right Tools & Navigation */}
-        <div className="flex items-center gap-2">
-          {/* Anti-Sloth Rolling Pacing Counter */}
-          <div
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-mono ${
-              isNearingLockout
-                ? 'border-[#ffb800]/60 bg-[#ffb800]/10 text-[#ffb800] animate-pulse'
-                : 'border-[#22242a] bg-[#131418] text-[#f0f2f5]'
-            }`}
-            title="Anti-Sloth 30-Minute Rolling Rule: Max 5 cumulative active minutes allowed per 30 minutes to safeguard your real-world vitality."
-          >
-            <Clock className="w-3 h-3 text-[#8a8f98]" />
-            <span className="font-bold">
-              {minutes30m}:{seconds30m.toString().padStart(2, '0')}
-            </span>
-            <span className="text-[10px] text-[#525866]">/ 5m</span>
-          </div>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Anti-Sloth Rolling Pacing Counter OR Dev Unrestricted Badge */}
+          {playtimeStats.isDev || username.toLowerCase() === 'dev' ? (
+            <div
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-mono font-bold ${
+                playtimeStats.isTemporaryDev
+                  ? 'border-[#ffb800]/50 bg-[#ffb800]/10 text-[#ffb800]'
+                  : 'border-[#00ff95]/50 bg-[#00ff95]/10 text-[#00ff95]'
+              }`}
+              title={
+                playtimeStats.isTemporaryDev
+                  ? `Temporary Dev status granted: Zero time restrictions. Expires in ${
+                      playtimeStats.devGrantedRemainingSeconds
+                        ? Math.ceil(playtimeStats.devGrantedRemainingSeconds / 3600) + 'h'
+                        : 'active duration'
+                    }.`
+                  : 'Main Dev Account: Zero time restrictions. Anti-Sloth limits do not apply to dev users.'
+              }
+            >
+              <Crown className="w-3 h-3 text-current" />
+              <span>DEV</span>
+              <span className="text-[10px] opacity-80">
+                {playtimeStats.isTemporaryDev && playtimeStats.devGrantedRemainingSeconds
+                  ? `${Math.max(1, Math.ceil(playtimeStats.devGrantedRemainingSeconds / 3600))}h`
+                  : '∞'}
+              </span>
+            </div>
+          ) : (
+            <div
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-mono ${
+                isNearingLockout
+                  ? 'border-[#ffb800]/60 bg-[#ffb800]/10 text-[#ffb800] animate-pulse'
+                  : 'border-[#22242a] bg-[#131418] text-[#f0f2f5]'
+              }`}
+              title="Anti-Sloth 30-Minute Rolling Rule: Max 5 cumulative active minutes allowed per 30 minutes to safeguard your real-world vitality."
+            >
+              <Clock className="w-3 h-3 text-[#8a8f98]" />
+              <span className="font-bold">
+                {minutes30m}:{seconds30m.toString().padStart(2, '0')}
+              </span>
+              <span className="text-[10px] text-[#525866]">/ 5m</span>
+            </div>
+          )}
 
           {/* Profile / Trophy Case */}
           <button
@@ -189,6 +224,15 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <span className="hidden sm:inline max-w-[85px] truncate">
               {isGuest ? 'Guest' : `@${username}`}
             </span>
+          </button>
+
+          {/* Settings & Dev Management Modal */}
+          <button
+            onClick={onOpenSettings}
+            className="p-1.5 rounded-lg border border-[#22242a] bg-[#1a1c22] hover:bg-[#252830] text-[#8a8f98] hover:text-[#f0f2f5] transition cursor-pointer"
+            title="Settings, Dev Controls & Session"
+          >
+            <Settings className="w-3.5 h-3.5" />
           </button>
 
           {/* Global Leaderboard */}
@@ -208,6 +252,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           >
             <HelpCircle className="w-3.5 h-3.5" />
           </button>
+
+          {/* Direct Log Out Button (Active when logged in as non-guest) */}
+          {!isGuest && (
+            <button
+              onClick={onLogout}
+              className="p-1.5 rounded-lg border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 hover:bg-[#ff3b5c]/25 text-[#ff3b5c] transition cursor-pointer"
+              title="Log Out (Switch to Guest session)"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           {/* Audio Mute Toggle */}
           <button

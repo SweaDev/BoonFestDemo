@@ -209,14 +209,29 @@ app.post('/api/auth/register', (req, res) => {
   res.json({ success: true, user, pacing });
 });
 
-// Authentication / Login with existing username
+// Authentication / Login with existing username or dev account
 app.post('/api/auth/login', (req, res) => {
-  const { username, sessionId } = req.body;
+  const { username, password, sessionId } = req.body;
   if (!username) {
     return res.status(400).json({ error: 'Username is required.' });
   }
 
   const cleanName = username.trim();
+
+  // Special Dev Account Logic:
+  // "Dev will set password later in production from settings. Dev user will not have restrictions."
+  if (cleanName.toLowerCase() === 'dev') {
+    const configuredPassword = storage.getDevPassword();
+    if (configuredPassword) {
+      if (!password || !storage.verifyDevPassword(password)) {
+        return res.status(401).json({
+          error: 'Dev password is required or incorrect.',
+          devPasswordRequired: true,
+        });
+      }
+    }
+  }
+
   let user = storage.getUser(cleanName);
   if (!user) {
     // Automatically register if not present for seamless onboarding
@@ -225,11 +240,132 @@ app.post('/api/auth/login', (req, res) => {
 
   if (sessionId && activeSessions[sessionId]) {
     activeSessions[sessionId].username = cleanName;
-    activeSessions[sessionId].isGuest = false;
+    activeSessions[sessionId].isGuest = cleanName.toLowerCase() === 'guest';
   }
 
   const pacing = storage.checkPacing(cleanName);
-  res.json({ success: true, user, pacing });
+  const devStatus = storage.isUserDev(cleanName);
+
+  res.json({
+    success: true,
+    user,
+    pacing,
+    devStatus,
+  });
+});
+
+// Authentication / Logout
+app.post('/api/auth/logout', (req, res) => {
+  const { sessionId } = req.body;
+  if (sessionId && activeSessions[sessionId]) {
+    activeSessions[sessionId].username = 'Guest';
+    activeSessions[sessionId].isGuest = true;
+  }
+  const pacing = storage.checkPacing('Guest');
+  res.json({
+    success: true,
+    message: 'Logged out successfully. You are now playing as Guest.',
+    pacing,
+  });
+});
+
+// Dev System: Get Configuration & Active Grants
+app.get('/api/dev/status', (req, res) => {
+  const username = (req.query.username as string) || '';
+  const devStatus = storage.isUserDev(username);
+  const hasPassword = Boolean(storage.getDevPassword());
+
+  res.json({
+    callerIsDev: devStatus.isDev,
+    callerIsMainDev: devStatus.isMainDev,
+    hasPassword,
+    activeGrants: devStatus.isMainDev ? storage.getDevGrants() : [],
+    registeredUsers: devStatus.isMainDev ? storage.getAllRegisteredUsers() : [],
+  });
+});
+
+// Dev System: Set or Update Dev Password
+app.post('/api/dev/set-password', (req, res) => {
+  const { currentUsername, newPassword, currentPassword } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+
+  if (cleanCaller !== 'dev') {
+    return res.status(403).json({ error: 'Only the Main Dev user can configure the dev password.' });
+  }
+
+  const existingPassword = storage.getDevPassword();
+  if (existingPassword) {
+    if (!currentPassword || !storage.verifyDevPassword(currentPassword)) {
+      return res.status(401).json({ error: 'Current dev password is required and was incorrect.' });
+    }
+  }
+
+  storage.setDevPassword(newPassword || '');
+  res.json({
+    success: true,
+    message: newPassword ? 'Dev password configured successfully.' : 'Dev password cleared (open dev access).',
+    hasPassword: Boolean(newPassword),
+  });
+});
+
+// Dev System: Grant temporary dev status to another user
+app.post('/api/dev/grant-status', (req, res) => {
+  const { currentUsername, targetUsername, durationValue, durationUnit } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+
+  if (cleanCaller !== 'dev') {
+    return res.status(403).json({ error: 'Only the Main Dev user can grant dev status.' });
+  }
+
+  if (!targetUsername || typeof targetUsername !== 'string' || !targetUsername.trim()) {
+    return res.status(400).json({ error: 'Target username is required.' });
+  }
+
+  const cleanTarget = targetUsername.trim();
+  if (cleanTarget.toLowerCase() === 'dev') {
+    return res.status(400).json({ error: 'The "dev" user is already the permanent Main Dev.' });
+  }
+
+  const numVal = Math.max(1, Number(durationValue) || 1);
+  let seconds = numVal * 3600; // default to hours
+  if (durationUnit === 'days') {
+    seconds = numVal * 86400;
+  } else if (durationUnit === 'minutes') {
+    seconds = numVal * 60;
+  } else if (durationUnit === 'hours') {
+    seconds = numVal * 3600;
+  }
+
+  const result = storage.grantDevStatus(cleanTarget, seconds, 'dev');
+  const activeGrants = storage.getDevGrants();
+  res.json({
+    success: true,
+    message: `Granted temporary dev status to @${cleanTarget} for ${numVal} ${durationUnit || 'hours'}.`,
+    expiresAt: result.expiresAt,
+    activeGrants,
+  });
+});
+
+// Dev System: Revoke temporary dev status from a user
+app.post('/api/dev/revoke-status', (req, res) => {
+  const { currentUsername, targetUsername } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+
+  if (cleanCaller !== 'dev') {
+    return res.status(403).json({ error: 'Only the Main Dev user can revoke dev status.' });
+  }
+
+  if (!targetUsername) {
+    return res.status(400).json({ error: 'Target username is required.' });
+  }
+
+  storage.revokeDevStatus(targetUsername);
+  const activeGrants = storage.getDevGrants();
+  res.json({
+    success: true,
+    message: `Dev status revoked for @${targetUsername}.`,
+    activeGrants,
+  });
 });
 
 // Playtime heartbeat (Server-side Anti-Sloth Pacing enforcement)

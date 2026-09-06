@@ -47,12 +47,14 @@ function createNewGameSession(sessionId: string, username: string, isGuest: bool
     isPaused: false,
     gameCount,
   };
+  // Pre-generate active cards immediately so sessions always have valid cards
+  drawHandForSession(state);
   activeSessions[sessionId] = state;
   return state;
 }
 
-// Helper to assemble a deck with Earn, Grow, Boon, and a deceptive Sloth card
-async function drawHandForSession(session: GameSessionState): Promise<CardPayload[]> {
+// Helper to assemble a deck with Earn, Grow, Boon, and a deceptive Sloth card (instant execution)
+function drawHandForSession(session: GameSessionState): CardPayload[] {
   const { attributes, credits } = session;
 
   // Filter accessible Earn cards (match prereqs or 1 aspirational)
@@ -78,13 +80,18 @@ async function drawHandForSession(session: GameSessionState): Promise<CardPayloa
   // Filter Boon cards
   const boonSample = BASE_BOON_CARDS.sort(() => 0.5 - Math.random()).slice(0, 2);
 
-  // Dynamically generate deceptive Sloth card (Gemini Flash-Lite)
-  const { card: slothCard, hidden: slothHidden } = await generateDynamicSlothCard(credits, attributes.mind);
+  // Instant deceptive Sloth card (with background generative buffer refill)
+  const { card: slothCard, hidden: slothHidden } = generateDynamicSlothCard
+    ? (generateDynamicSlothCard as any)(credits, attributes.mind)
+    : { card: null, hidden: null };
 
-  session.hiddenCards[slothCard.id] = slothHidden;
+  if (slothCard && slothHidden) {
+    session.hiddenCards[slothCard.id] = slothHidden;
+  }
 
   // Combine and shuffle
-  const fullHand = [...earnSample, ...growSample, ...boonSample, slothCard].sort(() => 0.5 - Math.random());
+  const slothList = slothCard ? [slothCard] : [];
+  const fullHand = [...earnSample, ...growSample, ...boonSample, ...slothList].sort(() => 0.5 - Math.random());
   session.activeCards = fullHand;
   return fullHand;
 }
@@ -245,7 +252,7 @@ app.post('/api/game/new', async (req, res) => {
   const session = createNewGameSession(targetSessionId, cleanUser, isGuest, gameCount);
 
   // Draw initial hand of cards
-  const cards = await drawHandForSession(session);
+  const cards = drawHandForSession(session);
 
   res.json({
     sessionId: targetSessionId,
@@ -265,32 +272,45 @@ app.post('/api/game/new', async (req, res) => {
 });
 
 // Draw a fresh hand of cards
-app.get('/api/cards/draw', async (req, res) => {
+app.get('/api/cards/draw', (req, res) => {
   const sessionId = req.query.sessionId as string;
-  const session = activeSessions[sessionId];
+  let session = sessionId ? activeSessions[sessionId] : null;
   if (!session) {
-    return res.status(404).json({ error: 'Active session not found.' });
+    const fallbackId = sessionId || `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    session = createNewGameSession(fallbackId, 'Guest', true);
   }
 
-  const cards = await drawHandForSession(session);
+  const cards = drawHandForSession(session);
   res.json({ cards });
 });
 
 // Execute a card choice
 app.post('/api/cards/execute', async (req, res) => {
   const { sessionId, cardId } = req.body;
-  const session = activeSessions[sessionId];
+  let session = sessionId ? activeSessions[sessionId] : null;
   if (!session) {
-    return res.status(404).json({ error: 'Active session not found.' });
+    // Auto-heal session if server restarted or session was wiped
+    const fallbackId = sessionId || `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    session = createNewGameSession(fallbackId, 'Guest', true);
   }
 
   if (session.isGameOver) {
     return res.status(400).json({ error: 'Game is already over.' });
   }
 
-  const card = session.activeCards.find(c => c.id === cardId);
+  let card = session.activeCards.find(c => c.id === cardId);
   if (!card) {
-    return res.status(400).json({ error: 'Selected card is not available.' });
+    // Fallback search across all known pools in case of hand desynchronization
+    const allPool = [...BASE_EARN_CARDS, ...BASE_GROW_CARDS, ...BASE_BOON_CARDS];
+    const foundCard = allPool.find(c => c.id === cardId);
+    if (foundCard) {
+      card = foundCard;
+    } else {
+      return res.status(400).json({
+        error: 'Selected card is not available in current hand.',
+        activeCards: session.activeCards,
+      });
+    }
   }
 
   // Check upfront cost
@@ -444,7 +464,7 @@ app.post('/api/cards/execute', async (req, res) => {
   }
 
   // Draw fresh cards for next turn
-  const freshCards = await drawHandForSession(session);
+  const freshCards = drawHandForSession(session);
   executeResult.newGameState.activeCards = freshCards;
 
   res.json(executeResult);

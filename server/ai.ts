@@ -118,19 +118,71 @@ const CURATED_SLOTH_TEMPLATES = [
     entropyRateMultiplier: 1.4,
     attributeDrop: { pillar: 'body' as const, amount: 1 },
   },
+  {
+    archetype: 'gambling' as SlothArchetype,
+    disguisedCategory: 'earn' as const,
+    title: 'Algorithmic Flash Arbitrage Vault',
+    description: 'Route short-term liquidity through a proprietary flash-loan loop skimming micro-fractions from civic energy trades.',
+    flavor: 'Risk-free delta-neutral yield is a mathematical certainty.',
+    cost: 30,
+    rewardDescription: '+420 Arbitrage Yield',
+    iconName: 'Coins',
+    phantomCredits: 420,
+    phantomDurationSec: 7,
+    entropySpike: 26,
+    entropyRateMultiplier: 1.35,
+    attributeDrop: { pillar: 'mind' as const, amount: 1 },
+  },
+  {
+    archetype: 'lottery' as SlothArchetype,
+    disguisedCategory: 'earn' as const,
+    title: 'Syndicate Stellar Scratch Card',
+    description: 'Scratch holographic silver foils for an instant tier-one civic grant voucher guaranteed by off-grid private sponsors.',
+    flavor: 'One flick of the coin could change your destiny forever.',
+    cost: 10,
+    rewardDescription: '+320 Instant Prize Credits',
+    iconName: 'Sparkles',
+    phantomCredits: 320,
+    phantomDurationSec: 6,
+    entropySpike: 20,
+    entropyRateMultiplier: 1.3,
+    attributeDrop: { pillar: 'spirit' as const, amount: 1 },
+  },
+  {
+    archetype: 'substance' as SlothArchetype,
+    disguisedCategory: 'grow' as const,
+    title: 'Quantum Dopamine Micro-Mist',
+    description: 'Administer an ultrasonic sublingual mist that saturates sensory receptors and shuts off existential anxiety.',
+    flavor: 'Pure serene bliss at the touch of a dispenser nozzle.',
+    cost: 25,
+    rewardDescription: '+3 Spirit & Euphoric Focus',
+    iconName: 'Flame',
+    phantomCredits: 280,
+    phantomDurationSec: 7,
+    entropySpike: 28,
+    entropyRateMultiplier: 1.4,
+    attributeDrop: { pillar: 'body' as const, amount: 1 },
+  },
 ];
 
-export async function generateDynamicSlothCard(playerCredits: number, mind: number): Promise<{
-  card: CardPayload;
-  hidden: HiddenSlothData;
-}> {
-  const archetypes: SlothArchetype[] = ['gambling', 'lottery', 'substance'];
-  const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
-  const cardId = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+// In-memory pre-generated Sloth card buffer for 0ms instantaneous hand draws
+const slothCardBuffer: Array<{ card: CardPayload; hidden: HiddenSlothData }> = [];
+let isRefillingSlothBuffer = false;
 
-  const ai = getAI();
-  if (ai) {
+// Background worker to asynchronously refill the buffer without blocking turns
+export async function refillSlothBuffer() {
+  if (isRefillingSlothBuffer || slothCardBuffer.length >= 3) return;
+  isRefillingSlothBuffer = true;
+
+  try {
+    const ai = getAI();
+    if (!ai) return;
+
+    const archetypes: SlothArchetype[] = ['gambling', 'lottery', 'substance'];
+    const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
+    const cardId = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
+
     for (let i = 0; i < candidateModels.length; i++) {
       const model = candidateModels[i];
       try {
@@ -138,7 +190,6 @@ export async function generateDynamicSlothCard(playerCredits: number, mind: numb
           ai.models.generateContent({
             model,
             contents: `You are generating a deceptive trap card for the pro-social game BoonFest.
-The player has ${playerCredits} credits and Mind level ${mind}.
 The trap archetype is: "${chosenArchetype}".
 Archetype guidelines:
 - "gambling": Shady dice games, back-alley bets, predatory crypto/leverage schemes promising instant credit multiplication.
@@ -170,7 +221,7 @@ CRITICAL DECEPTION RULES:
               },
             },
           }),
-          4000
+          3000
         );
 
         const rawText = response.text || '';
@@ -199,26 +250,49 @@ CRITICAL DECEPTION RULES:
                 entropyRateMultiplier: 1.35,
                 attributeDrop: { pillar, amount: 1 },
                 phantomCredits: Math.max(180, Math.min(500, Number(parsed.phantomCredits) || 320)),
-                phantomDurationSec: Math.floor(Math.random() * 3) + 6, // 6-8 seconds
+                phantomDurationSec: Math.floor(Math.random() * 3) + 6,
                 initialCreditsGiven: 0,
               },
             };
 
-            return { card, hidden };
+            slothCardBuffer.push({ card, hidden });
+            break;
           }
         }
       } catch {
-        if (i < candidateModels.length - 1) {
-          await sleep(250);
-          continue;
-        }
+        // try next candidate model
       }
     }
+  } catch {
+    // Ignore background errors
+  } finally {
+    isRefillingSlothBuffer = false;
+  }
+}
+
+// Always returns in 0ms so that card drawing and "Enact" never block or stall
+export function getInstantSlothCard(playerCredits: number, mind: number): {
+  card: CardPayload;
+  hidden: HiddenSlothData;
+} {
+  // Trigger non-blocking background refill if buffer is low
+  if (slothCardBuffer.length < 2) {
+    refillSlothBuffer().catch(() => {});
   }
 
-  // Curated fallback
+  // If buffer has an AI card ready, pop and return immediately
+  if (slothCardBuffer.length > 0) {
+    const item = slothCardBuffer.shift()!;
+    item.card.id = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    return item;
+  }
+
+  // Instant curated procedural card
+  const archetypes: SlothArchetype[] = ['gambling', 'lottery', 'substance'];
+  const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
   const matching = CURATED_SLOTH_TEMPLATES.filter(t => t.archetype === chosenArchetype);
   const template = matching.length > 0 ? matching[Math.floor(Math.random() * matching.length)] : CURATED_SLOTH_TEMPLATES[0];
+  const cardId = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
   const card: CardPayload = {
     id: cardId,
@@ -246,6 +320,14 @@ CRITICAL DECEPTION RULES:
   };
 
   return { card, hidden };
+}
+
+// Backward compatibility: export generateDynamicSlothCard as an instant resolver
+export async function generateDynamicSlothCard(playerCredits: number, mind: number): Promise<{
+  card: CardPayload;
+  hidden: HiddenSlothData;
+}> {
+  return getInstantSlothCard(playerCredits, mind);
 }
 
 export async function generateAIPostMortem(telemetry: RunTelemetry): Promise<AIPostMortem> {

@@ -25,6 +25,7 @@ import {
   Wine,
   Lock,
   ArrowUpRight,
+  Loader2,
 } from 'lucide-react';
 import { CardPayload, PlayerAttributes } from '../types';
 
@@ -33,8 +34,10 @@ interface CardItemProps {
   isFocused: boolean;
   playerCredits: number;
   playerAttributes: PlayerAttributes;
+  isExecuting?: boolean;
   onSelect: () => void;
   onHover: () => void;
+  onFocus?: () => void;
 }
 
 // Icon mapping dictionary
@@ -69,8 +72,10 @@ export const CardItem: React.FC<CardItemProps> = ({
   isFocused,
   playerCredits,
   playerAttributes,
+  isExecuting = false,
   onSelect,
   onHover,
+  onFocus,
 }) => {
   const IconComponent = ICON_MAP[card.iconName] || Sparkles;
 
@@ -114,7 +119,11 @@ export const CardItem: React.FC<CardItemProps> = ({
   return (
     <div
       onClick={() => {
-        if (isExecutable) onSelect();
+        if (!isFocused && onFocus) {
+          onFocus();
+        } else if (isExecutable && !isExecuting) {
+          onSelect();
+        }
       }}
       onMouseEnter={onHover}
       className={`relative w-[280px] sm:w-[310px] shrink-0 select-none rounded-xl border p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 ease-out cursor-pointer ${
@@ -204,13 +213,13 @@ export const CardItem: React.FC<CardItemProps> = ({
           </div>
 
           <button
-            disabled={!isExecutable}
+            disabled={!isExecutable || isExecuting}
             onClick={(e) => {
               e.stopPropagation();
-              if (isExecutable) onSelect();
+              if (isExecutable && !isExecuting) onSelect();
             }}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              !isExecutable
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              !isExecutable || isExecuting
                 ? 'bg-[#1a1c22] border border-[#22242a] text-[#525866] cursor-not-allowed'
                 : isFocused
                 ? (card.category === 'boon'
@@ -221,7 +230,12 @@ export const CardItem: React.FC<CardItemProps> = ({
                 : 'bg-[#1a1c22] border border-[#22242a] text-[#f0f2f5] hover:bg-[#252830]'
             }`}
           >
-            {!hasPrereqs ? (
+            {isExecuting && isFocused ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Enacting...</span>
+              </>
+            ) : !hasPrereqs ? (
               <>
                 <Lock className="w-3 h-3" />
                 <span>Locked</span>

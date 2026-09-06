@@ -268,6 +268,10 @@ export default function App() {
         }
       } else {
         const err = await res.json();
+        if (err.activeCards && err.activeCards.length > 0) {
+          setActiveCards(err.activeCards);
+          setFocusedIndex(0);
+        }
         addToast('error', err.error || 'Execution failed.');
       }
     } catch (err) {

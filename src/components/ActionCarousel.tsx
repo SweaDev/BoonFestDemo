@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, CornerDownLeft, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CornerDownLeft, Sparkles, Loader2, Lock } from 'lucide-react';
 import { CardPayload, PlayerAttributes } from '../types';
 import { CardItem } from './CardItem';
 import { sounds } from '../lib/sound';
@@ -91,6 +91,13 @@ export const ActionCarousel: React.FC<ActionCarouselProps> = ({
   };
 
   const currentFocusedCard = cards[focusedIndex];
+  const hasCurrentPrereqs = !currentFocusedCard?.prerequisites || (
+    (!currentFocusedCard.prerequisites.mind || playerAttributes.mind >= currentFocusedCard.prerequisites.mind) &&
+    (!currentFocusedCard.prerequisites.body || playerAttributes.body >= currentFocusedCard.prerequisites.body) &&
+    (!currentFocusedCard.prerequisites.spirit || playerAttributes.spirit >= currentFocusedCard.prerequisites.spirit)
+  );
+  const canAffordCurrent = currentFocusedCard ? playerCredits >= currentFocusedCard.cost : false;
+  const isCurrentExecutable = currentFocusedCard && hasCurrentPrereqs && canAffordCurrent && !isExecuting;
 
   return (
     <div className="relative w-full max-w-7xl mx-auto flex flex-col items-center justify-center py-2 sm:py-3">
@@ -146,7 +153,12 @@ export const ActionCarousel: React.FC<ActionCarouselProps> = ({
               isFocused={idx === focusedIndex}
               playerCredits={playerCredits}
               playerAttributes={playerAttributes}
+              isExecuting={isExecuting}
               onSelect={() => onExecuteCard(card)}
+              onFocus={() => {
+                onFocusCard(idx);
+                sounds.playCardBrowse();
+              }}
               onHover={() => {
                 if (focusedIndex !== idx) {
                   onFocusCard(idx);
@@ -160,15 +172,39 @@ export const ActionCarousel: React.FC<ActionCarouselProps> = ({
 
       {/* Quick Enact Bar for active card */}
       {currentFocusedCard && (
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-2 flex items-center gap-2">
           <button
-            onClick={() => onExecuteCard(currentFocusedCard)}
-            disabled={isExecuting || playerCredits < currentFocusedCard.cost}
-            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] font-extrabold text-xs shadow-[0_0_20px_rgba(0,255,149,0.3)] disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+            onClick={() => {
+              if (isCurrentExecutable) onExecuteCard(currentFocusedCard);
+            }}
+            disabled={!isCurrentExecutable}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-black text-xs sm:text-sm tracking-wide transition cursor-pointer ${
+              !isCurrentExecutable
+                ? 'bg-[#1a1c22] border border-[#22242a] text-[#525866] cursor-not-allowed opacity-60'
+                : 'bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] shadow-[0_0_20px_rgba(0,255,149,0.35)]'
+            }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#0c0d10]" />
-            <span>Enact Selected: "{currentFocusedCard.title}"</span>
-            <span className="font-mono opacity-80 font-bold">({currentFocusedCard.cost === 0 ? 'Free' : `${currentFocusedCard.cost} Cr`})</span>
+            {isExecuting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#0c0d10]" />
+                <span>Enacting "{currentFocusedCard.title}"...</span>
+              </>
+            ) : !hasCurrentPrereqs ? (
+              <>
+                <Lock className="w-4 h-4 text-[#ff3b5c]" />
+                <span>Prerequisites Not Met</span>
+              </>
+            ) : !canAffordCurrent ? (
+              <span>Need {currentFocusedCard.cost - playerCredits} More Credits</span>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 text-[#0c0d10]" />
+                <span>Enact Selected: "{currentFocusedCard.title}"</span>
+                <span className="font-mono opacity-80 font-bold">
+                  ({currentFocusedCard.cost === 0 ? 'Free' : `${currentFocusedCard.cost} Cr`})
+                </span>
+              </>
+            )}
           </button>
         </div>
       )}

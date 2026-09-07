@@ -21,6 +21,29 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DevConfigStatus, DevGrantRecord, PlaytimeStats } from '../types';
+import { GoogleSignInModal } from './GoogleSignInModal';
+import { GoogleAuthPayload } from '../lib/googleAuth';
+
+export const RESTRICTED_USERNAMES_LIST = [
+  'dev',
+  'admin',
+  'administrator',
+  'demo',
+  'boonfest',
+  'guest',
+  'system',
+  'root',
+  'moderator',
+  'mod',
+  'staff',
+  'official',
+  'support',
+  'security',
+  'superuser',
+  'operator',
+  'bot',
+  'owner',
+];
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -30,6 +53,8 @@ interface SettingsModalProps {
   pacing: PlaytimeStats | null;
   onLogout: () => Promise<void>;
   onLogin: (username: string, password?: string) => Promise<boolean>;
+  onRegisterUser?: (username: string, password?: string) => Promise<boolean>;
+  onGoogleAuth?: (payload: GoogleAuthPayload) => Promise<boolean>;
   onAddToast: (type: 'success' | 'warning' | 'error' | 'info', message: string) => void;
 }
 
@@ -41,6 +66,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   pacing,
   onLogout,
   onLogin,
+  onRegisterUser,
+  onGoogleAuth,
   onAddToast,
 }) => {
   const [activeTab, setActiveTab] = useState<'account' | 'dev_security' | 'dev_grants'>('account');
@@ -62,11 +89,82 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [durationUnit, setDurationUnit] = useState<'hours' | 'days' | 'minutes'>('hours');
   const [isGranting, setIsGranting] = useState(false);
 
-  // Switch / Dev Login State
+  // Switch / Login State
   const [switchUsername, setSwitchUsername] = useState('');
+  const [loginPasswordInput, setLoginPasswordInput] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [devLoginPassword, setDevLoginPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [requiresDevPassword, setRequiresDevPassword] = useState(false);
+
+  // Guest Registration State
+  const [registerUsernameInput, setRegisterUsernameInput] = useState('');
+  const [registerPasswordInput, setRegisterPasswordInput] = useState('');
+  const [registerConfirmPasswordInput, setRegisterConfirmPasswordInput] = useState('');
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [guestAuthMode, setGuestAuthMode] = useState<'login' | 'register'>('login');
+
+  // Google Sign-In Modal State
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [googleModalTitle, setGoogleModalTitle] = useState('Continue with Google');
+  const [googleModalAction, setGoogleModalAction] = useState('Sign in with Google');
+
+  // Regular User Change Password State
+  const [changeOldPassword, setChangeOldPassword] = useState('');
+  const [changeNewPassword, setChangeNewPassword] = useState('');
+  const [changeConfirmPassword, setChangeConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showChangePasswordSection, setShowChangePasswordSection] = useState(false);
+
+  const cleanRegisterName = registerUsernameInput.toLowerCase().trim().replace(/^@/, '');
+  const isRestrictedEntered = Boolean(cleanRegisterName && RESTRICTED_USERNAMES_LIST.includes(cleanRegisterName));
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = registerUsernameInput.trim();
+    if (!clean) {
+      onAddToast('warning', 'Please enter a username.');
+      return;
+    }
+    if (clean.length < 3) {
+      onAddToast('warning', 'Username must be at least 3 characters long.');
+      return;
+    }
+
+    if (RESTRICTED_USERNAMES_LIST.includes(clean.toLowerCase().replace(/^@/, ''))) {
+      onAddToast('error', `The username '${clean}' is reserved and restricted. Please choose another username.`);
+      return;
+    }
+
+    if (!registerPasswordInput || registerPasswordInput.length < 6) {
+      onAddToast('warning', 'Password is required and must be at least 6 characters.');
+      return;
+    }
+
+    if (registerPasswordInput !== registerConfirmPasswordInput) {
+      onAddToast('error', 'Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    if (!onRegisterUser) {
+      onAddToast('error', 'Registration service unavailable.');
+      return;
+    }
+
+    setIsRegistering(true);
+    try {
+      const ok = await onRegisterUser(clean, registerPasswordInput);
+      if (ok) {
+        setRegisterUsernameInput('');
+        setRegisterPasswordInput('');
+        setRegisterConfirmPasswordInput('');
+        fetchDevConfig();
+      }
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   const isMainDev = currentUsername.toLowerCase() === 'dev';
   const isDevUser = Boolean(pacing?.isDev || isMainDev);
@@ -235,19 +333,72 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // Handle direct login or quick dev login
   const handleQuickLogin = async (userToLogin: string, passwordToUse?: string) => {
+    const cleanUser = userToLogin.trim();
+    if (!cleanUser) {
+      onAddToast('warning', 'Please enter a username.');
+      return;
+    }
+
+    if (!passwordToUse || !passwordToUse.trim()) {
+      onAddToast('warning', 'Password is required to log in.');
+      return;
+    }
+
     setIsLoggingIn(true);
     try {
-      const success = await onLogin(userToLogin, passwordToUse);
+      const success = await onLogin(cleanUser, passwordToUse);
       if (success) {
         setSwitchUsername('');
+        setLoginPasswordInput('');
         setDevLoginPassword('');
         setRequiresDevPassword(false);
         fetchDevConfig();
-      } else if (userToLogin.toLowerCase() === 'dev') {
+      } else if (cleanUser.toLowerCase() === 'dev') {
         setRequiresDevPassword(true);
       }
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  // Handle password update for standard registered users
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeNewPassword || changeNewPassword.length < 6) {
+      onAddToast('warning', 'New password must be at least 6 characters long.');
+      return;
+    }
+    if (changeNewPassword !== changeConfirmPassword) {
+      onAddToast('error', 'New passwords do not match.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: currentUsername,
+          currentPassword: changeOldPassword,
+          newPassword: changeNewPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        onAddToast('success', 'Password updated successfully!');
+        setChangeOldPassword('');
+        setChangeNewPassword('');
+        setChangeConfirmPassword('');
+        setShowChangePasswordSection(false);
+      } else {
+        onAddToast('error', data.error || 'Failed to update password.');
+      }
+    } catch {
+      onAddToast('error', 'Error updating password.');
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -397,102 +548,517 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                 </div>
 
-                {/* Logout Action */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={async () => {
-                      await onLogout();
-                      fetchDevConfig();
-                    }}
-                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#ff3b5c]/15 hover:bg-[#ff3b5c]/25 border border-[#ff3b5c]/30 text-[#ff3b5c] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Log Out</span>
-                  </button>
-                </div>
+                {/* Logout Action (Logged-in users only; guests are already logged out) */}
+                {isGuest ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1c22] border border-[#22242a] text-[#8a8f98] text-xs font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#8a8f98]"></span>
+                    <span>Logged Out</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      id="btn-settings-logout"
+                      onClick={async () => {
+                        await onLogout();
+                        fetchDevConfig();
+                      }}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#ff3b5c]/15 hover:bg-[#ff3b5c]/25 border border-[#ff3b5c]/30 text-[#ff3b5c] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Dev User Shortcut / Login */}
-              {!isMainDev && (
-                <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-3">
-                  <div className="flex items-center justify-between">
+              {/* GUEST ACCESS: Dedicated Log In or Register Card (Only shown for guest) */}
+              {isGuest && (
+                <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#22242a] pb-3">
                     <div>
-                      <h4 className="text-xs font-bold text-[#f0f2f5] flex items-center gap-1.5">
-                        <Crown className="w-3.5 h-3.5 text-[#00ff95]" />
-                        Developer Access
-                      </h4>
+                      <h3 className="text-xs font-bold text-[#f0f2f5] flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-[#00ff95]" />
+                        Account Access: Log In or Register
+                      </h3>
                       <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                        Switch to the <code className="text-[#00ff95]">dev</code> account to test with zero time restrictions.
+                        Guest state means you are currently logged out. Log in to an existing account with your password or register a new handle.
                       </p>
                     </div>
 
-                    {!requiresDevPassword && (
+                    <div className="flex bg-[#131418] p-1 rounded-lg border border-[#22242a] text-xs font-semibold self-start sm:self-auto">
                       <button
-                        onClick={() => handleQuickLogin('dev')}
-                        disabled={isLoggingIn}
-                        className="px-3 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer flex items-center gap-1"
+                        type="button"
+                        onClick={() => setGuestAuthMode('login')}
+                        className={`px-3 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
+                          guestAuthMode === 'login'
+                            ? 'bg-[#00ff95] text-[#0c0d10] font-bold shadow'
+                            : 'text-[#8a8f98] hover:text-[#f0f2f5]'
+                        }`}
                       >
-                        <LogIn className="w-3.5 h-3.5" />
-                        <span>{isLoggingIn ? 'Logging In...' : 'Log In as Dev'}</span>
+                        <LogIn className="w-3 h-3" />
+                        <span>Log In</span>
                       </button>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => setGuestAuthMode('register')}
+                        className={`px-3 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
+                          guestAuthMode === 'register'
+                            ? 'bg-[#00ff95] text-[#0c0d10] font-bold shadow'
+                            : 'text-[#8a8f98] hover:text-[#f0f2f5]'
+                        }`}
+                      >
+                        <UserPlus className="w-3 h-3" />
+                        <span>Register</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {requiresDevPassword && (
-                    <div className="p-3 rounded-lg bg-[#131418] border border-[#ffb800]/40 space-y-2">
-                      <span className="text-xs font-semibold text-[#ffb800] flex items-center gap-1.5">
-                        <Lock className="w-3.5 h-3.5" />
-                        Dev Password Configured
-                      </span>
-                      <p className="text-[11px] text-[#8a8f98]">
-                        The Dev user has set a security password. Enter it below to unlock dev mode.
-                      </p>
-                      <div className="flex gap-2">
-                        <input
-                          type="password"
-                          placeholder="Enter Dev Password..."
-                          value={devLoginPassword}
-                          onChange={(e) => setDevLoginPassword(e.target.value)}
-                          className="flex-1 px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
-                        />
+                  {/* Log In Sub-view */}
+                  {guestAuthMode === 'login' && (
+                    <div className="space-y-3.5">
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (switchUsername.trim()) {
+                            handleQuickLogin(switchUsername.trim(), loginPasswordInput);
+                          }
+                        }}
+                        className="space-y-3"
+                      >
+                        <div>
+                          <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                            Username <span className="text-[#ff3b5c]">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Enter your username..."
+                            value={switchUsername}
+                            onChange={(e) => setSwitchUsername(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                            Password <span className="text-[#ff3b5c]">*</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showLoginPassword ? 'text' : 'password'}
+                              required
+                              placeholder="Enter your account password..."
+                              value={loginPasswordInput}
+                              onChange={(e) => setLoginPasswordInput(e.target.value)}
+                              className="w-full pl-3 pr-9 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowLoginPassword(!showLoginPassword)}
+                              className="absolute right-2.5 top-2.5 text-[#8a8f98] hover:text-[#f0f2f5] cursor-pointer"
+                            >
+                              {showLoginPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="submit"
+                            disabled={isLoggingIn || !switchUsername.trim() || !loginPasswordInput.trim()}
+                            className="flex-1 py-2 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                          >
+                            <LogIn className="w-3.5 h-3.5" />
+                            <span>{isLoggingIn ? 'Authenticating...' : 'Log In'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setGoogleModalTitle('Sign In with Google');
+                              setGoogleModalAction('Sign in with Google');
+                              setIsGoogleModalOpen(true);
+                            }}
+                            className="flex-1 py-2 rounded-lg bg-[#ffffff] hover:bg-[#f1f3f4] text-[#3c4043] text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2 shadow"
+                          >
+                            <svg viewBox="0 0 24 24" className="w-4 h-4">
+                              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
+                              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z" />
+                              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+                              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+                            </svg>
+                            <span>Sign in with Google</span>
+                          </button>
+                        </div>
+                      </form>
+
+                      {/* Dev Shortcut */}
+                      <div className="pt-2 border-t border-[#22242a]/60 flex items-center justify-between">
+                        <div className="text-[11px] text-[#8a8f98]">
+                          Developer account? Use <code className="text-[#00ff95]">dev</code> with dev password.
+                        </div>
                         <button
-                          onClick={() => handleQuickLogin('dev', devLoginPassword)}
-                          disabled={isLoggingIn}
-                          className="px-3.5 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer"
+                          type="button"
+                          onClick={() => {
+                            setSwitchUsername('dev');
+                            setRequiresDevPassword(true);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-[#22242a] hover:bg-[#2c3038] text-[#00ff95] text-xs font-bold transition cursor-pointer flex items-center gap-1"
                         >
-                          Authenticate
+                          <Crown className="w-3 h-3 text-[#00ff95]" />
+                          <span>Quick Dev Access</span>
                         </button>
                       </div>
+
+                      {requiresDevPassword && (
+                        <div className="p-3 rounded-lg bg-[#131418] border border-[#ffb800]/40 space-y-2">
+                          <span className="text-xs font-semibold text-[#ffb800] flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5" />
+                            Dev Security Password Required
+                          </span>
+                          <div className="flex gap-2">
+                            <input
+                              type="password"
+                              placeholder="Enter Dev Password..."
+                              value={devLoginPassword}
+                              onChange={(e) => setDevLoginPassword(e.target.value)}
+                              className="flex-1 px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                            />
+                            <button
+                              onClick={() => handleQuickLogin('dev', devLoginPassword)}
+                              disabled={isLoggingIn || !devLoginPassword.trim()}
+                              className="px-3.5 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer disabled:opacity-50"
+                            >
+                              Authenticate
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
+                  )}
+
+                  {/* Register Sub-view */}
+                  {guestAuthMode === 'register' && (
+                    <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                          Choose Username <span className="text-[#ff3b5c]">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Choose unique username (e.g. Phoenix, Starlight)..."
+                          value={registerUsernameInput}
+                          onChange={(e) => setRegisterUsernameInput(e.target.value)}
+                          className={`w-full px-3 py-2 rounded-lg bg-[#131418] border text-xs text-[#f0f2f5] font-mono focus:outline-none ${
+                            isRestrictedEntered
+                              ? 'border-[#ff3b5c] focus:border-[#ff3b5c]'
+                              : 'border-[#22242a] focus:border-[#00ff95]'
+                          }`}
+                        />
+                        {isRestrictedEntered && (
+                          <div className="mt-1 text-[11px] text-[#ff3b5c] flex items-center gap-1 font-semibold">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            <span>
+                              &apos;{registerUsernameInput.trim()}&apos; is a reserved name. Dev, Admin, demo, Boonfest, and system names cannot be registered.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                            Password (min 6 chars) <span className="text-[#ff3b5c]">*</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showRegisterPassword ? 'text' : 'password'}
+                              required
+                              minLength={6}
+                              placeholder="Create a password..."
+                              value={registerPasswordInput}
+                              onChange={(e) => setRegisterPasswordInput(e.target.value)}
+                              className="w-full pl-3 pr-8 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                              className="absolute right-2 top-2.5 text-[#8a8f98] hover:text-[#f0f2f5] cursor-pointer"
+                            >
+                              {showRegisterPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                            Confirm Password <span className="text-[#ff3b5c]">*</span>
+                          </label>
+                          <input
+                            type={showRegisterPassword ? 'text' : 'password'}
+                            required
+                            minLength={6}
+                            placeholder="Confirm your password..."
+                            value={registerConfirmPasswordInput}
+                            onChange={(e) => setRegisterConfirmPasswordInput(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <button
+                          type="submit"
+                          disabled={
+                            isRegistering ||
+                            !registerUsernameInput.trim() ||
+                            isRestrictedEntered ||
+                            registerPasswordInput.length < 6 ||
+                            registerPasswordInput !== registerConfirmPasswordInput
+                          }
+                          className="flex-1 py-2 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>{isRegistering ? 'Registering...' : 'Register with Password'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGoogleModalTitle('Register with Google Account');
+                            setGoogleModalAction('Register with Google');
+                            setIsGoogleModalOpen(true);
+                          }}
+                          className="flex-1 py-2 rounded-lg bg-[#ffffff] hover:bg-[#f1f3f4] text-[#3c4043] text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2 shadow"
+                        >
+                          <svg viewBox="0 0 24 24" className="w-4 h-4">
+                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z" />
+                            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+                          </svg>
+                          <span>Register with Google</span>
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-[#8a8f98]">
+                        Registering converts your temporary session into a permanent profile, enabling your personal Trophy Case and persistent leaderboard records.
+                      </p>
+                    </form>
                   )}
                 </div>
               )}
 
-              {/* Switch User to another username */}
-              <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-2.5">
-                <span className="text-xs font-bold text-[#f0f2f5] block">Switch Account / Log In As Another User</span>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Enter username (e.g. Alice, Bob, dev)..."
-                    value={switchUsername}
-                    onChange={(e) => setSwitchUsername(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
-                  />
-                  <button
-                    onClick={() => {
-                      if (switchUsername.trim()) {
-                        handleQuickLogin(switchUsername.trim());
-                      }
-                    }}
-                    disabled={isLoggingIn || !switchUsername.trim()}
-                    className="px-4 py-1.5 rounded-lg bg-[#22242a] hover:bg-[#2c3038] text-[#f0f2f5] text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    <span>Switch</span>
-                  </button>
-                </div>
-              </div>
+              {/* LOGGED IN ACCESS (!isGuest): Password change & switch user */}
+              {!isGuest && (
+                <>
+                  {/* Password Management for Logged-In User */}
+                  <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-[#00ff95]/10 flex items-center justify-center text-[#00ff95]">
+                          <Key className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-[#f0f2f5]">Security Credentials</h4>
+                          <p className="text-[11px] text-[#8a8f98]">
+                            Update or set your account password for login protection.
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowChangePasswordSection(!showChangePasswordSection)}
+                        className="px-3 py-1.5 rounded-lg bg-[#1a1c22] hover:bg-[#252830] border border-[#22242a] text-[#f0f2f5] text-xs font-semibold transition cursor-pointer"
+                      >
+                        {showChangePasswordSection ? 'Cancel' : 'Change Password'}
+                      </button>
+                    </div>
+
+                    {showChangePasswordSection && (
+                      <form onSubmit={handleUpdatePassword} className="space-y-3 pt-2 border-t border-[#22242a]">
+                        <div>
+                          <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                            Current Password
+                          </label>
+                          <input
+                            type="password"
+                            placeholder="Enter current password (if set)..."
+                            value={changeOldPassword}
+                            onChange={(e) => setChangeOldPassword(e.target.value)}
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                              New Password (min 6 chars) <span className="text-[#ff3b5c]">*</span>
+                            </label>
+                            <input
+                              type="password"
+                              required
+                              minLength={6}
+                              placeholder="New password..."
+                              value={changeNewPassword}
+                              onChange={(e) => setChangeNewPassword(e.target.value)}
+                              className="w-full px-3 py-1.5 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                              Confirm New Password <span className="text-[#ff3b5c]">*</span>
+                            </label>
+                            <input
+                              type="password"
+                              required
+                              minLength={6}
+                              placeholder="Confirm new password..."
+                              value={changeConfirmPassword}
+                              onChange={(e) => setChangeConfirmPassword(e.target.value)}
+                              className="w-full px-3 py-1.5 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="submit"
+                            disabled={
+                              isUpdatingPassword ||
+                              changeNewPassword.length < 6 ||
+                              changeNewPassword !== changeConfirmPassword
+                            }
+                            className="px-4 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                          >
+                            {isUpdatingPassword ? 'Updating...' : 'Save New Password'}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+
+                  {/* Dev User Shortcut / Login */}
+                  {!isMainDev && (
+                    <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-[#f0f2f5] flex items-center gap-1.5">
+                            <Crown className="w-3.5 h-3.5 text-[#00ff95]" />
+                            Developer Access
+                          </h4>
+                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                            Switch to the <code className="text-[#00ff95]">dev</code> account to test with zero time restrictions.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSwitchUsername('dev');
+                            setRequiresDevPassword(true);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer flex items-center gap-1"
+                        >
+                          <LogIn className="w-3.5 h-3.5" />
+                          <span>Dev Login</span>
+                        </button>
+                      </div>
+
+                      {requiresDevPassword && (
+                        <div className="p-3 rounded-lg bg-[#131418] border border-[#ffb800]/40 space-y-2">
+                          <span className="text-xs font-semibold text-[#ffb800] flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5" />
+                            Dev Password Configured
+                          </span>
+                          <p className="text-[11px] text-[#8a8f98]">
+                            The Dev account is password protected. Enter the dev password to proceed.
+                          </p>
+                          <div className="flex gap-2">
+                            <input
+                              type="password"
+                              placeholder="Enter Dev Password..."
+                              value={devLoginPassword}
+                              onChange={(e) => setDevLoginPassword(e.target.value)}
+                              className="flex-1 px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                            />
+                            <button
+                              onClick={() => handleQuickLogin('dev', devLoginPassword)}
+                              disabled={isLoggingIn || !devLoginPassword.trim()}
+                              className="px-3.5 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer disabled:opacity-50"
+                            >
+                              Authenticate
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Switch User to another username (with password) */}
+                  <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-3">
+                    <span className="text-xs font-bold text-[#f0f2f5] block">Switch Account</span>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (switchUsername.trim() && loginPasswordInput.trim()) {
+                          handleQuickLogin(switchUsername.trim(), loginPasswordInput);
+                        }
+                      }}
+                      className="space-y-2.5"
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          required
+                          placeholder="Username..."
+                          value={switchUsername}
+                          onChange={(e) => setSwitchUsername(e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                        />
+                        <input
+                          type="password"
+                          required
+                          placeholder="Password..."
+                          value={loginPasswordInput}
+                          onChange={(e) => setLoginPasswordInput(e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGoogleModalTitle('Switch Account with Google');
+                            setGoogleModalAction('Sign in with Google');
+                            setIsGoogleModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#ffffff] hover:bg-[#f1f3f4] text-[#3c4043] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow"
+                        >
+                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5">
+                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z" />
+                            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+                          </svg>
+                          <span>Switch via Google</span>
+                        </button>
+
+                        <button
+                          type="submit"
+                          disabled={isLoggingIn || !switchUsername.trim() || !loginPasswordInput.trim()}
+                          className="px-4 py-1.5 rounded-lg bg-[#22242a] hover:bg-[#2c3038] text-[#f0f2f5] text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          <LogIn className="w-3.5 h-3.5" />
+                          <span>{isLoggingIn ? 'Switching...' : 'Switch Account'}</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </>
+              )}
 
               {/* Policy Explanation */}
               <div className="p-3.5 rounded-xl bg-[#131418] border border-[#22242a]/60 text-xs text-[#8a8f98] space-y-1">
@@ -826,6 +1392,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
       </motion.div>
+
+      {/* Google Sign-In / Register Modal */}
+      <GoogleSignInModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        title={googleModalTitle}
+        actionText={googleModalAction}
+        onGoogleSuccess={async (payload) => {
+          if (onGoogleAuth) {
+            const success = await onGoogleAuth(payload);
+            if (success) {
+              fetchDevConfig();
+              return true;
+            }
+          }
+          return false;
+        }}
+      />
     </div>
   );
 };

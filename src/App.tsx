@@ -447,13 +447,13 @@ export default function App() {
     }
   };
 
-  // Register account (Account Conversion)
-  const handleRegisterAccount = async (newUsername: string): Promise<boolean> => {
+  // Register account (Account Conversion) with password
+  const handleRegisterAccount = async (newUsername: string, password?: string): Promise<boolean> => {
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: newUsername, sessionId }),
+        body: JSON.stringify({ username: newUsername, password, sessionId }),
       });
 
       if (res.ok) {
@@ -474,7 +474,11 @@ export default function App() {
   };
 
   // Claim guest Top 10 trophy & register
-  const handleClaimGuestTrophy = async (newUsername: string): Promise<Trophy | undefined> => {
+  const handleClaimGuestTrophy = async (
+    newUsername: string,
+    password?: string,
+    googleAuth?: { email?: string; googleId?: string; credential?: string }
+  ): Promise<Trophy | undefined> => {
     if (!gameOverData) return undefined;
     try {
       const res = await fetch('/api/game/claim-guest-trophy', {
@@ -483,6 +487,8 @@ export default function App() {
         body: JSON.stringify({
           sessionId,
           username: newUsername,
+          password,
+          googleAuth,
           telemetry: gameOverData.telemetry,
           postMortem: gameOverData.postMortem,
         }),
@@ -502,6 +508,44 @@ export default function App() {
     } catch (err: unknown) {
       addToast('error', (err as Error)?.message || 'Failed to claim trophy.');
       return undefined;
+    }
+  };
+
+  // Google Authentication handler (both Register and Login)
+  const handleGoogleAuth = async (payload: {
+    credential?: string;
+    email?: string;
+    name?: string;
+    googleId?: string;
+    desiredUsername?: string;
+  }): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          sessionId,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setUsername(data.user.username);
+        setIsGuest(false);
+        if (data.pacing) {
+          setPlaytimeStats(data.pacing);
+        }
+        localStorage.setItem('boonfest_username', data.user.username);
+        addToast('success', `Authenticated with Google as @${data.user.username}!`);
+        return true;
+      } else {
+        addToast('error', data.error || 'Google authentication failed.');
+        return false;
+      }
+    } catch {
+      addToast('error', 'Google authentication network error.');
+      return false;
     }
   };
 
@@ -810,6 +854,7 @@ export default function App() {
           onStartNewRun={handleStartNewRun}
           onRegisterAccount={handleRegisterAccount}
           onClaimGuestTrophy={handleClaimGuestTrophy}
+          onGoogleAuth={handleGoogleAuth}
           onLogout={handleLogout}
           onOpenSettings={() => setShowSettings(true)}
           onOpenLeaderboard={() => setShowLeaderboard(true)}
@@ -857,6 +902,8 @@ export default function App() {
         pacing={playtimeStats}
         onLogout={handleLogout}
         onLogin={handleLogin}
+        onRegisterUser={handleRegisterAccount}
+        onGoogleAuth={handleGoogleAuth}
         onAddToast={addToast}
       />
 

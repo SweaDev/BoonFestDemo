@@ -477,8 +477,77 @@
       "runsCount": 0,
       "trophies": [],
       "runs": [],
-      "lockoutUntil": 0,
-      "lockoutReason": null
+      "lockoutUntil": 1788753309328,
+      "lockoutReason": "30m_rule"
+    },
+    "foo": {
+      "username": "foo",
+      "createdAt": 1788751715475,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": []
+    },
+    "barr": {
+      "username": "barr",
+      "createdAt": 1788751756529,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": []
+    },
+    "nopassuser": {
+      "username": "NoPassUser",
+      "createdAt": 1788752553813,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": []
+    },
+    "admin": {
+      "username": "admin",
+      "createdAt": 1788752553835,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": []
+    },
+    "boonfest": {
+      "username": "Boonfest",
+      "createdAt": 1788752553842,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": []
+    },
+    "demo": {
+      "username": "demo",
+      "createdAt": 1788752553848,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": []
+    },
+    "stargazer_1788752553850": {
+      "username": "StarGazer_1788752553850",
+      "createdAt": 1788752553855,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": []
+    },
+    "stargazer_1788752563090": {
+      "username": "StarGazer_1788752563090",
+      "createdAt": 1788752563094,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": [],
+      "passwordHash": "1ac859c9b08dd2d4ad8ad24be8302af0bd378c6c9b455df4ad3a0b46c150e32e8ed052e3250ddf9a9e18e245f2d97246cf5c1782117bbd71b63c04d7f4d30b70",
+      "salt": "86761d4a1b145e367e88ae765d5a570c",
+      "authProvider": "local"
+    },
+    "player_1788752563118": {
+      "username": "player_1788752563118",
+      "createdAt": 1788752563123,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": [],
+      "authProvider": "google",
+      "email": "player_1788752563118@gmail.com",
+      "googleId": "g_1788752563118"
     }
   },
   "playtimeLogs": {
@@ -502,6 +571,126 @@
       {
         "timestamp": 1788750119508,
         "durationSeconds": 30
+      },
+      {
+        "timestamp": 1788750161621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750166622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750171622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750176623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750181621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750186622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750191622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750196620,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750201622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750206621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750211623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750216622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750221621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750226624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750231624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750236621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750241623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750246622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750251623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750256623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750261623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750266625,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750271624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750276629,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750281621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750286621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750291622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750296621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750301640,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750306621,
+        "durationSeconds": 5
       }
     ],
     "fmy": [
@@ -1006,6 +1195,152 @@
       {
         "timestamp": 1788750119508,
         "durationSeconds": 30
+      },
+      {
+        "timestamp": 1788750161621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750166622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750171622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750176623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750181621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750186622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750191622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750196620,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750201622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750206621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750211623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750216622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750221621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750226624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750231624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750236621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750241623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750246622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750251623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750256623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750261623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750266625,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750271624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750276629,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750281621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750286621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750291622,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750296621,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750301640,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788750306621,
+        "durationSeconds": 5
+      }
+    ],
+    "foo": [
+      {
+        "timestamp": 1788751720592,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788751725588,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788751730589,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788751735587,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788751740588,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788751745587,
+        "durationSeconds": 5
       }
     ]
   },

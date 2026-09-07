@@ -11,16 +11,41 @@ import {
   AlertTriangle,
   Lightbulb,
   LogOut,
+  LogIn,
   Settings,
   BookOpen,
   Award,
   Volume2,
   VolumeX,
   User,
+  Eye,
+  EyeOff,
+  Lock,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { GameOverResponse, Trophy } from '../types';
 import { sounds } from '../lib/sound';
+import { GoogleSignInModal } from './GoogleSignInModal';
+import { GoogleAuthPayload } from '../lib/googleAuth';
+
+const RESTRICTED_USERNAMES_LIST = [
+  'dev',
+  'admin',
+  'administrator',
+  'demo',
+  'boonfest',
+  'root',
+  'system',
+  'moderator',
+  'mod',
+  'guest',
+  'null',
+  'undefined',
+  'superuser',
+  'official',
+  'support',
+  'staff',
+];
 
 interface GameOverModalProps {
   gameOverData: GameOverResponse;
@@ -28,8 +53,9 @@ interface GameOverModalProps {
   isGuest: boolean;
   isDev?: boolean;
   onStartNewRun: () => void;
-  onRegisterAccount: (username: string) => Promise<boolean>;
-  onClaimGuestTrophy: (username: string) => Promise<Trophy | undefined>;
+  onRegisterAccount: (username: string, password?: string) => Promise<boolean>;
+  onClaimGuestTrophy: (username: string, password?: string, googleAuth?: any) => Promise<Trophy | undefined>;
+  onGoogleAuth?: (payload: GoogleAuthPayload) => Promise<boolean>;
   onLogout?: () => Promise<void> | void;
   onOpenSettings?: () => void;
   onOpenLeaderboard?: () => void;
@@ -47,6 +73,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   onStartNewRun,
   onRegisterAccount,
   onClaimGuestTrophy,
+  onGoogleAuth,
   onLogout,
   onOpenSettings,
   onOpenLeaderboard,
@@ -59,11 +86,18 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   const isDevUser = Boolean(isDev || gameOverData.isDev || currentUsername.toLowerCase().trim().replace(/^@/, '') === 'dev');
   const [trophy, setTrophy] = useState<Trophy | undefined>(initialTrophy);
   const [usernameInput, setUsernameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
   const [userError, setUserError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isRegisteredNow, setIsRegisteredNow] = useState(!isGuest);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+
+  const cleanNameInput = usernameInput.trim().toLowerCase().replace(/^@/, '');
+  const isRestrictedEntered = RESTRICTED_USERNAMES_LIST.includes(cleanNameInput);
 
   const handleLogoutClick = async () => {
     if (isLoggingOut || !onLogout) return;
@@ -82,23 +116,61 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       setUserError('Username must be at least 3 characters.');
       return;
     }
+    if (isRestrictedEntered) {
+      setUserError(`'${usernameInput.trim()}' is a reserved name. Dev, Admin, demo, Boonfest, and system names cannot be registered.`);
+      return;
+    }
+    if (!passwordInput || passwordInput.length < 6) {
+      setUserError('Password is required and must be at least 6 characters.');
+      return;
+    }
+    if (passwordInput !== confirmPasswordInput) {
+      setUserError('Passwords do not match. Please re-enter your password.');
+      return;
+    }
+
     setIsSubmittingUser(true);
     setUserError(null);
 
     try {
       if (isTop10) {
-        const mintedTrophy = await onClaimGuestTrophy(usernameInput.trim());
+        const mintedTrophy = await onClaimGuestTrophy(usernameInput.trim(), passwordInput);
         if (mintedTrophy) {
           setTrophy(mintedTrophy);
           sounds.playTrophyFanfare();
         }
       } else {
-        const ok = await onRegisterAccount(usernameInput.trim());
-        if (!ok) throw new Error('Registration failed');
+        const ok = await onRegisterAccount(usernameInput.trim(), passwordInput);
+        if (!ok) throw new Error('Registration failed. Please try a different username.');
       }
       setIsRegisteredNow(true);
     } catch (err: unknown) {
       setUserError((err as Error)?.message || 'Failed to register username.');
+    } finally {
+      setIsSubmittingUser(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (payload: GoogleAuthPayload): Promise<boolean> => {
+    setIsSubmittingUser(true);
+    setUserError(null);
+    try {
+      if (isTop10) {
+        const targetUsername = payload.name || payload.email?.split('@')[0] || 'Player';
+        const mintedTrophy = await onClaimGuestTrophy(targetUsername, undefined, payload);
+        if (mintedTrophy) {
+          setTrophy(mintedTrophy);
+          sounds.playTrophyFanfare();
+        }
+      } else if (onGoogleAuth) {
+        const ok = await onGoogleAuth(payload);
+        if (!ok) throw new Error('Google authentication failed.');
+      }
+      setIsRegisteredNow(true);
+      return true;
+    } catch (err: unknown) {
+      setUserError((err as Error)?.message || 'Failed to register with Google.');
+      return false;
     } finally {
       setIsSubmittingUser(false);
     }
@@ -205,7 +277,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
               </button>
             )}
 
-            {onLogout && (
+            {onLogout && !isGuest && (
               <button
                 onClick={handleLogoutClick}
                 disabled={isLoggingOut}
@@ -214,6 +286,17 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
+              </button>
+            )}
+
+            {isGuest && onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#00ff95]/15 border border-[#00ff95]/40 hover:bg-[#00ff95]/25 text-[#00ff95] text-[11px] font-bold transition cursor-pointer"
+                title="Log In or Register Account"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Log In / Register</span>
               </button>
             )}
           </div>
@@ -274,23 +357,104 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                     : 'To adhere to the Anti-Sloth lifecycle rules, subsequent runs require registering a unique username to access the permanent Trophy Case and historical telemetry.'}
                 </p>
 
-                <form onSubmit={handleRegisterAndClaim} className="mt-3 flex flex-wrap gap-2">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Choose unique username..."
-                    value={usernameInput}
-                    onChange={(e) => setUsernameInput(e.target.value)}
-                    className="flex-1 min-w-[200px] px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-[#f0f2f5] text-xs focus:outline-none focus:border-[#ffb800] font-mono"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSubmittingUser}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#ffb800] hover:bg-[#ffd000] text-[#0c0d10] font-bold text-xs transition cursor-pointer disabled:opacity-50"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>{isSubmittingUser ? 'Minting Trophy...' : 'Register & Save Score'}</span>
-                  </button>
+                <form onSubmit={handleRegisterAndClaim} className="mt-3 space-y-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                      Choose Unique Username <span className="text-[#ff3b5c]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Choose unique username (e.g. Phoenix, Starlight)..."
+                      value={usernameInput}
+                      onChange={(e) => setUsernameInput(e.target.value)}
+                      className={`w-full px-3 py-1.5 rounded-lg bg-[#0c0d10] border text-[#f0f2f5] text-xs focus:outline-none font-mono ${
+                        isRestrictedEntered
+                          ? 'border-[#ff3b5c] focus:border-[#ff3b5c]'
+                          : 'border-[#22242a] focus:border-[#ffb800]'
+                      }`}
+                    />
+                    {isRestrictedEntered && (
+                      <div className="mt-1 text-[11px] text-[#ff3b5c] flex items-center gap-1 font-semibold">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>
+                          &apos;{usernameInput.trim()}&apos; is a reserved name. Dev, Admin, demo, Boonfest, and system names cannot be registered.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                        Password (min 6 chars) <span className="text-[#ff3b5c]">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          minLength={6}
+                          placeholder="Create password..."
+                          value={passwordInput}
+                          onChange={(e) => setPasswordInput(e.target.value)}
+                          className="w-full pl-3 pr-8 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-[#f0f2f5] text-xs focus:outline-none focus:border-[#ffb800] font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-2 text-[#8a8f98] hover:text-[#f0f2f5] cursor-pointer"
+                        >
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
+                        Confirm Password <span className="text-[#ff3b5c]">*</span>
+                      </label>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={6}
+                        placeholder="Confirm password..."
+                        value={confirmPasswordInput}
+                        onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-[#f0f2f5] text-xs focus:outline-none focus:border-[#ffb800] font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={
+                        isSubmittingUser ||
+                        !usernameInput.trim() ||
+                        isRestrictedEntered ||
+                        passwordInput.length < 6 ||
+                        passwordInput !== confirmPasswordInput
+                      }
+                      className="w-full sm:w-auto flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#ffb800] hover:bg-[#ffd000] text-[#0c0d10] font-bold text-xs transition cursor-pointer disabled:opacity-50"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>{isSubmittingUser ? 'Minting & Saving...' : 'Register & Save Score'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsGoogleModalOpen(true)}
+                      className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#ffffff] hover:bg-[#f1f3f4] text-[#3c4043] font-bold text-xs transition cursor-pointer shadow"
+                    >
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z" />
+                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+                      </svg>
+                      <span>Register with Google</span>
+                    </button>
+                  </div>
                 </form>
                 {userError && (
                   <p className="text-xs text-[#ff3b5c] mt-2 font-medium">{userError}</p>
@@ -434,7 +598,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
               </button>
             )}
 
-            {onLogout && (
+            {onLogout && !isGuest && (
               <button
                 onClick={handleLogoutClick}
                 disabled={isLoggingOut}
@@ -442,6 +606,16 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
+              </button>
+            )}
+
+            {isGuest && onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00ff95]/15 hover:bg-[#00ff95]/25 border border-[#00ff95]/40 text-xs font-bold text-[#00ff95] transition cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Log In / Register</span>
               </button>
             )}
           </div>
@@ -456,6 +630,15 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           </button>
         </div>
       </motion.div>
+
+      {/* Google Registration Modal */}
+      <GoogleSignInModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        title="Register with Google Account"
+        actionText="Register with Google"
+        onGoogleSuccess={handleGoogleSuccess}
+      />
     </div>
   );
 };

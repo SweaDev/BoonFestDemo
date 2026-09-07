@@ -6,7 +6,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { generateAIPostMortem, generateDynamicSlothCard, getInstantSlothCard, generateTrophyArtifact } from './server/ai';
 import { BASE_BOON_CARDS, BASE_EARN_CARDS, BASE_GROW_CARDS } from './server/data/cardPool';
-import { storage } from './server/storage';
+import { storage, isRestrictedUsername, RESTRICTED_USERNAMES } from './server/storage';
 import {
   ActivePhantomCredit,
   CardPayload,
@@ -188,20 +188,43 @@ app.get('/api/session', (req, res) => {
   });
 });
 
-// Authentication / Account Registration (Account Conversion)
+// Authentication / Restricted usernames check
+app.get('/api/auth/restricted-names', (req, res) => {
+  res.json({ restricted: RESTRICTED_USERNAMES });
+});
+
+// Authentication / Account Registration (Requires username and password)
 app.post('/api/auth/register', (req, res) => {
-  const { username, sessionId } = req.body;
+  const { username, password, sessionId } = req.body;
   if (!username || typeof username !== 'string' || username.trim().length < 3) {
-    return res.status(400).json({ error: 'Username must be at least 3 characters.' });
+    return res.status(400).json({ error: 'Username must be at least 3 characters long.' });
   }
 
   const cleanName = username.trim();
-  const existing = storage.getUser(cleanName);
-  if (existing) {
-    return res.status(409).json({ error: 'Username already registered. Please choose another unique name.' });
+
+  // 1. Enforce Restricted Usernames
+  if (isRestrictedUsername(cleanName)) {
+    return res.status(400).json({
+      error: `The username '${cleanName}' is reserved and restricted. Please choose another username.`,
+    });
   }
 
-  const user = storage.registerUser(cleanName);
+  // 2. Enforce Password Requirement: Users without password should not be allowed
+  if (!password || typeof password !== 'string' || password.length < 6) {
+    return res.status(400).json({
+      error: 'Password is required and must be at least 6 characters long.',
+    });
+  }
+
+  // 3. Prevent Duplicate Registration
+  const existing = storage.getUser(cleanName);
+  if (existing) {
+    return res.status(409).json({
+      error: `Username '${cleanName}' is already registered. Please log in or choose a different name.`,
+    });
+  }
+
+  const user = storage.registerUser(cleanName, { password });
 
   // Link active session to newly created account
   if (sessionId && activeSessions[sessionId]) {
@@ -210,10 +233,18 @@ app.post('/api/auth/register', (req, res) => {
   }
 
   const pacing = storage.checkPacing(cleanName);
-  res.json({ success: true, user, pacing });
+  res.json({
+    success: true,
+    user: {
+      username: user.username,
+      authProvider: user.authProvider || 'local',
+      email: user.email,
+    },
+    pacing,
+  });
 });
 
-// Authentication / Login with existing username or dev account
+// Authentication / Login with username and password
 app.post('/api/auth/login', (req, res) => {
   const { username, password, sessionId } = req.body;
   if (!username) {
@@ -222,40 +253,223 @@ app.post('/api/auth/login', (req, res) => {
 
   const cleanName = username.trim();
 
-  // Special Dev Account Logic:
-  // "Dev will set password later in production from settings. Dev user will not have restrictions."
-  if (cleanName.toLowerCase() === 'dev') {
-    const configuredPassword = storage.getDevPassword();
-    if (configuredPassword) {
-      if (!password || !storage.verifyDevPassword(password)) {
-        return res.status(401).json({
-          error: 'Dev password is required or incorrect.',
-          devPasswordRequired: true,
-        });
-      }
-    }
+  // Users without password should not be allowed to log in!
+  if (!password || typeof password !== 'string' || password.trim().length === 0) {
+    return res.status(400).json({
+      error: 'Password is required. Users without a password cannot log in.',
+    });
   }
 
-  let user = storage.getUser(cleanName);
+  // Dev user login
+  if (cleanName.toLowerCase() === 'dev') {
+    if (!storage.verifyDevPassword(password)) {
+      return res.status(401).json({
+        error: 'Dev password is required or incorrect.',
+        devPasswordRequired: true,
+      });
+    }
+
+    let devUser = storage.getUser('dev');
+    if (!devUser) {
+      devUser = storage.registerUser('dev');
+    }
+
+    if (sessionId && activeSessions[sessionId]) {
+      activeSessions[sessionId].username = 'dev';
+      activeSessions[sessionId].isGuest = false;
+    }
+
+    const pacing = storage.checkPacing('dev');
+    const devStatus = storage.isUserDev('dev');
+
+    return res.json({
+      success: true,
+      user: {
+        username: 'dev',
+        authProvider: 'local',
+      },
+      pacing,
+      devStatus,
+    });
+  }
+
+  // Normal user login:
+  // Must already exist in database — auto-registration without password is strictly prohibited!
+  const user = storage.getUser(cleanName);
   if (!user) {
-    // Automatically register if not present for seamless onboarding
-    user = storage.registerUser(cleanName);
+    return res.status(404).json({
+      error: `Account '${cleanName}' does not exist. Please register a new account first.`,
+    });
+  }
+
+  // If user registered with Google and has no local password
+  if (user.authProvider === 'google' && !user.passwordHash) {
+    return res.status(400).json({
+      error: `Account '${user.username}' is connected with Google. Please use 'Sign in with Google'.`,
+    });
+  }
+
+  // Legacy user without a password
+  if (!user.passwordHash || !user.salt) {
+    return res.status(403).json({
+      error: `Account '${user.username}' does not have a password configured. Please register a new secure account.`,
+    });
+  }
+
+  // Verify password hash
+  const isValid = storage.verifyUserPassword(user, password);
+  if (!isValid) {
+    return res.status(401).json({
+      error: 'Incorrect password. Please verify your credentials and try again.',
+    });
   }
 
   if (sessionId && activeSessions[sessionId]) {
-    activeSessions[sessionId].username = cleanName;
-    activeSessions[sessionId].isGuest = cleanName.toLowerCase() === 'guest';
+    activeSessions[sessionId].username = user.username;
+    activeSessions[sessionId].isGuest = false;
   }
 
-  const pacing = storage.checkPacing(cleanName);
-  const devStatus = storage.isUserDev(cleanName);
+  const pacing = storage.checkPacing(user.username);
+  const devStatus = storage.isUserDev(user.username);
 
   res.json({
     success: true,
-    user,
+    user: {
+      username: user.username,
+      authProvider: user.authProvider || 'local',
+      email: user.email,
+    },
     pacing,
     devStatus,
   });
+});
+
+// Authentication / Google Account Register and Login
+app.post('/api/auth/google', (req, res) => {
+  const { credential, email, name, googleId, sessionId, desiredUsername } = req.body;
+
+  let verifiedEmail = email;
+  let verifiedGoogleId = googleId;
+  let verifiedName = name;
+
+  // If JWT credential passed from Google Identity Services
+  if (credential && typeof credential === 'string') {
+    try {
+      const parts = credential.split('.');
+      if (parts.length === 3) {
+        const payloadStr = Buffer.from(parts[1], 'base64').toString('utf8');
+        const payload = JSON.parse(payloadStr);
+        if (payload.email) verifiedEmail = payload.email;
+        if (payload.sub) verifiedGoogleId = payload.sub;
+        if (payload.name) verifiedName = payload.name;
+      }
+    } catch (err) {
+      console.warn('Failed to parse Google credential token:', err);
+    }
+  }
+
+  if (!verifiedEmail && !verifiedGoogleId) {
+    return res.status(400).json({ error: 'Google authentication details are missing or invalid.' });
+  }
+
+  // Check if user already exists
+  let existingUser = (verifiedGoogleId && storage.getUserByGoogleId(verifiedGoogleId)) ||
+                     (verifiedEmail && storage.getUserByEmail(verifiedEmail));
+
+  if (existingUser) {
+    if (sessionId && activeSessions[sessionId]) {
+      activeSessions[sessionId].username = existingUser.username;
+      activeSessions[sessionId].isGuest = false;
+    }
+    const pacing = storage.checkPacing(existingUser.username);
+    const devStatus = storage.isUserDev(existingUser.username);
+    return res.json({
+      success: true,
+      user: {
+        username: existingUser.username,
+        email: existingUser.email,
+        authProvider: 'google',
+      },
+      pacing,
+      devStatus,
+    });
+  }
+
+  // Register new Google account
+  let targetUsername = desiredUsername ? desiredUsername.trim() : '';
+  if (!targetUsername) {
+    if (verifiedEmail) {
+      targetUsername = verifiedEmail.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '');
+    } else if (verifiedName) {
+      targetUsername = verifiedName.replace(/\s+/g, '').replace(/[^a-zA-Z0-9_-]/g, '');
+    } else {
+      targetUsername = `G_${Math.floor(Math.random() * 89999 + 10000)}`;
+    }
+  }
+
+  // Prevent restricted usernames
+  if (isRestrictedUsername(targetUsername)) {
+    targetUsername = `${targetUsername}_${Math.floor(Math.random() * 899 + 100)}`;
+  }
+
+  if (targetUsername.length < 3) {
+    targetUsername = `User_${targetUsername}_${Math.floor(Math.random() * 89 + 10)}`;
+  }
+
+  // Ensure uniqueness
+  let candidate = targetUsername;
+  let counter = 1;
+  while (storage.getUser(candidate) || isRestrictedUsername(candidate)) {
+    candidate = `${targetUsername}${counter++}`;
+  }
+  targetUsername = candidate;
+
+  const newUser = storage.registerUser(targetUsername, {
+    authProvider: 'google',
+    email: verifiedEmail,
+    googleId: verifiedGoogleId,
+  });
+
+  if (sessionId && activeSessions[sessionId]) {
+    activeSessions[sessionId].username = newUser.username;
+    activeSessions[sessionId].isGuest = false;
+  }
+
+  const pacing = storage.checkPacing(newUser.username);
+  const devStatus = storage.isUserDev(newUser.username);
+
+  res.json({
+    success: true,
+    user: {
+      username: newUser.username,
+      email: newUser.email,
+      authProvider: 'google',
+    },
+    pacing,
+    devStatus,
+  });
+});
+
+// Authentication / Change Password
+app.post('/api/auth/change-password', (req, res) => {
+  const { username, currentPassword, newPassword } = req.body;
+  if (!username || !newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+  }
+
+  const user = storage.getUser(username);
+  if (!user) {
+    return res.status(404).json({ error: 'User account not found.' });
+  }
+
+  if (user.passwordHash && user.salt) {
+    if (!currentPassword || !storage.verifyUserPassword(user, currentPassword)) {
+      return res.status(401).json({ error: 'Current password is required and was incorrect.' });
+    }
+  }
+
+  storage.setUserPassword(user.username, newPassword);
+  res.json({ success: true, message: 'Password updated successfully.' });
 });
 
 // Authentication / Logout
@@ -873,13 +1087,40 @@ app.post('/api/game/over', async (req, res) => {
 
 // Finalize Guest Top 10 registration and mint trophy
 app.post('/api/game/claim-guest-trophy', async (req, res) => {
-  const { sessionId, username, telemetry, postMortem } = req.body;
+  const { sessionId, username, password, googleAuth, telemetry, postMortem } = req.body;
   if (!username || typeof username !== 'string' || username.trim().length < 3) {
-    return res.status(400).json({ error: 'Valid username required.' });
+    return res.status(400).json({ error: 'Valid username required (minimum 3 characters).' });
   }
 
   const cleanName = username.trim();
-  storage.registerUser(cleanName);
+
+  // Check if user already exists
+  const existing = storage.getUser(cleanName);
+  if (existing) {
+    if (!googleAuth) {
+      if (!password || !storage.verifyUserPassword(existing, password)) {
+        return res.status(401).json({ error: 'Username already exists. Incorrect password.' });
+      }
+    }
+  } else {
+    // New user registration
+    if (isRestrictedUsername(cleanName)) {
+      return res.status(400).json({
+        error: `Username '${cleanName}' is reserved and cannot be registered. Please pick another name.`,
+      });
+    }
+    if (!googleAuth && (!password || typeof password !== 'string' || password.length < 6)) {
+      return res.status(400).json({
+        error: 'Password is required and must be at least 6 characters long.',
+      });
+    }
+    storage.registerUser(cleanName, {
+      password,
+      authProvider: googleAuth ? 'google' : 'local',
+      email: googleAuth?.email,
+      googleId: googleAuth?.googleId,
+    });
+  }
 
   if (sessionId && activeSessions[sessionId]) {
     activeSessions[sessionId].username = cleanName;

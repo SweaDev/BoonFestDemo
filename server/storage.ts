@@ -1,13 +1,54 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { DevGrantRecord, LeaderboardEntry, PlaytimeStats, RunTelemetry, Trophy, UserSession } from '../src/types';
+
+export const RESTRICTED_USERNAMES = [
+  'dev',
+  'admin',
+  'administrator',
+  'demo',
+  'boonfest',
+  'guest',
+  'system',
+  'root',
+  'moderator',
+  'mod',
+  'staff',
+  'official',
+  'support',
+  'security',
+  'superuser',
+  'operator',
+  'bot',
+  'owner',
+  'null',
+  'undefined',
+];
+
+export function isRestrictedUsername(username: string): boolean {
+  if (!username) return true;
+  const clean = username.toLowerCase().trim().replace(/^@/, '');
+  return RESTRICTED_USERNAMES.includes(clean);
+}
+
+export function hashPassword(password: string, salt?: string): { hash: string; salt: string } {
+  const actualSalt = salt || crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, actualSalt, 1000, 64, 'sha512').toString('hex');
+  return { hash, salt: actualSalt };
+}
+
+export function verifyPassword(password: string, storedHash: string, salt: string): boolean {
+  const { hash } = hashPassword(password, salt);
+  return hash === storedHash;
+}
 
 interface PlayInterval {
   timestamp: number;
   durationSeconds: number;
 }
 
-interface UserRecord {
+export interface UserRecord {
   username: string;
   createdAt: number;
   runsCount: number;
@@ -18,6 +59,11 @@ interface UserRecord {
   devGrantedUntil?: number;
   devGrantedBy?: string;
   devGrantedAt?: number;
+  passwordHash?: string;
+  salt?: string;
+  authProvider?: 'local' | 'google';
+  email?: string;
+  googleId?: string;
 }
 
 interface DBData {
@@ -262,22 +308,93 @@ class StorageManager {
     return this.data.users[clean] || this.data.users[username.toLowerCase()] || null;
   }
 
-  public registerUser(username: string): UserRecord {
+  public getUserByGoogleId(googleId: string): UserRecord | null {
+    if (!googleId) return null;
+    for (const u of Object.values(this.data.users)) {
+      if (u.googleId === googleId) return u;
+    }
+    return null;
+  }
+
+  public getUserByEmail(email: string): UserRecord | null {
+    if (!email) return null;
+    const clean = email.toLowerCase().trim();
+    for (const u of Object.values(this.data.users)) {
+      if (u.email && u.email.toLowerCase().trim() === clean) return u;
+    }
+    return null;
+  }
+
+  public registerUser(
+    username: string,
+    options?: {
+      password?: string;
+      authProvider?: 'local' | 'google';
+      email?: string;
+      googleId?: string;
+    }
+  ): UserRecord {
     const clean = (username || '').toLowerCase().trim().replace(/^@/, '');
     const key = clean;
-    if (this.data.users[key]) {
-      return this.data.users[key];
+
+    let passwordHash: string | undefined;
+    let salt: string | undefined;
+
+    if (options?.password) {
+      const hashed = hashPassword(options.password);
+      passwordHash = hashed.hash;
+      salt = hashed.salt;
     }
+
+    if (this.data.users[key]) {
+      const existing = this.data.users[key];
+      if (passwordHash && !existing.passwordHash) {
+        existing.passwordHash = passwordHash;
+        existing.salt = salt;
+      }
+      if (options?.email && !existing.email) existing.email = options.email;
+      if (options?.googleId && !existing.googleId) existing.googleId = options.googleId;
+      if (options?.authProvider) existing.authProvider = options.authProvider;
+      this.persist();
+      return existing;
+    }
+
     const user: UserRecord = {
       username: username.trim(),
       createdAt: Date.now(),
       runsCount: 0,
       trophies: [],
       runs: [],
+      passwordHash,
+      salt,
+      authProvider: options?.authProvider || (options?.googleId ? 'google' : 'local'),
+      email: options?.email,
+      googleId: options?.googleId,
     };
     this.data.users[key] = user;
     this.persist();
     return user;
+  }
+
+  public verifyUserPassword(user: UserRecord, passwordInput?: string): boolean {
+    if (!passwordInput) return false;
+    if (user.username.toLowerCase() === 'dev') {
+      return this.verifyDevPassword(passwordInput);
+    }
+    if (!user.passwordHash || !user.salt) {
+      return false;
+    }
+    return verifyPassword(passwordInput, user.passwordHash, user.salt);
+  }
+
+  public setUserPassword(username: string, newPassword: string): boolean {
+    const user = this.getUser(username);
+    if (!user) return false;
+    const { hash, salt } = hashPassword(newPassword);
+    user.passwordHash = hash;
+    user.salt = salt;
+    this.persist();
+    return true;
   }
 
   public addRun(username: string, run: RunTelemetry, trophy?: Trophy) {

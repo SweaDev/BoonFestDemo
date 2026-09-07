@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Settings,
   LogOut,
+  LogIn,
   Crown,
   ShieldCheck,
   Pause,
@@ -259,9 +260,21 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <HelpCircle className="w-3.5 h-3.5" />
           </button>
 
-          {/* Direct Log Out Button (Active when logged in as non-guest) */}
-          {!isGuest && (
+          {/* Guest Log In / Register Option (Player is already logged out) OR Non-Guest Log Out */}
+          {isGuest ? (
             <button
+              id="btn-header-login-register"
+              onClick={onOpenSettings}
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border border-[#00ff95]/40 bg-[#00ff95]/10 hover:bg-[#00ff95]/20 text-[#00ff95] transition text-xs font-bold cursor-pointer shadow-[0_0_12px_rgba(0,255,149,0.15)]"
+              title="Log In or Register Account"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Log In / Register</span>
+              <span className="sm:hidden">Log In</span>
+            </button>
+          ) : (
+            <button
+              id="btn-header-logout"
               onClick={onLogout}
               className="p-1.5 rounded-lg border border-[#ff3b5c]/30 bg-[#ff3b5c]/10 hover:bg-[#ff3b5c]/25 text-[#ff3b5c] transition cursor-pointer"
               title="Log Out (Switch to Guest session)"

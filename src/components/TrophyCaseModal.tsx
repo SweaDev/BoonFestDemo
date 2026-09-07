@@ -122,7 +122,7 @@ export const TrophyCaseModal: React.FC<TrophyCaseModalProps> = ({
               className="px-2.5 py-1.5 rounded-lg border border-[#22242a] bg-[#1a1c22] hover:bg-[#252830] text-xs font-semibold text-[#f0f2f5] transition cursor-pointer flex items-center gap-1.5"
             >
               <LogIn className="w-3.5 h-3.5 text-[#00ff95]" />
-              <span>Switch User</span>
+              <span>{isGuest ? 'Log In / Switch' : 'Switch User'}</span>
             </button>
             <button
               onClick={onClose}

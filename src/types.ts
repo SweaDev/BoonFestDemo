@@ -120,6 +120,24 @@ export interface UserSession {
   isMainDev?: boolean;
   isTemporaryDev?: boolean;
   devGrantedUntil?: number;
+  authProvider?: 'local' | 'google';
+  email?: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  user?: {
+    username: string;
+    authProvider?: 'local' | 'google';
+    email?: string;
+  };
+  pacing?: PlaytimeStats;
+  devStatus?: {
+    isDev: boolean;
+    isMainDev: boolean;
+    isTemporaryDev: boolean;
+  };
+  error?: string;
 }
 
 export interface Trophy {

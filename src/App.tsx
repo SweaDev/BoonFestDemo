@@ -18,6 +18,7 @@ import { LeaderboardModal } from './components/LeaderboardModal';
 import { RulesModal } from './components/RulesModal';
 import { SettingsModal } from './components/SettingsModal';
 import { NotificationToast, ToastMessage } from './components/NotificationToast';
+import { SocietyBackground, ActionImpact } from './components/SocietyBackground';
 import { sounds } from './lib/sound';
 import { Sparkles, HeartHandshake, Shield, AlertTriangle } from 'lucide-react';
 
@@ -48,6 +49,7 @@ export default function App() {
   const [activePhantoms, setActivePhantoms] = useState<ActivePhantomCredit[]>([]);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [lastActionImpact, setLastActionImpact] = useState<ActionImpact | null>(null);
 
   // Anti-Sloth Pacing State
   const [playtimeStats, setPlaytimeStats] = useState<PlaytimeStats>({
@@ -265,6 +267,20 @@ export default function App() {
         if (result.newGameState.paceMultiplier !== undefined) setPaceMultiplier(result.newGameState.paceMultiplier);
         setFocusedIndex(0);
 
+        // Set action impact for background reflection
+        const category = result.type === 'sloth_trap'
+          ? 'sloth_trap'
+          : result.type === 'phantom_default'
+          ? 'phantom_default'
+          : card.category;
+
+        setLastActionImpact({
+          id: Date.now(),
+          category,
+          label: card.title,
+          timestamp: Date.now(),
+        });
+
         // Sound cues & notifications
         if (result.type === 'sloth_trap') {
           sounds.playSlothDissonance();
@@ -452,7 +468,15 @@ export default function App() {
   const clampedHue = Math.max(0, Math.min(120, hue));
 
   return (
-    <div className="relative min-h-screen w-full bg-[#0c0d10] bg-high-density-grid text-[#f0f2f5] flex flex-col justify-between overflow-x-hidden select-none font-sans">
+    <div className="relative min-h-screen w-full bg-[#0c0d10] text-[#f0f2f5] flex flex-col justify-between overflow-x-hidden select-none font-sans">
+      {/* Dynamic Pre-Generated Society Background (Critical / Struggling / Thriving) with Action Reflections */}
+      <SocietyBackground
+        hue={hue}
+        decayRate={effectiveDecayRate}
+        boonPoints={boonPoints}
+        lastAction={lastActionImpact}
+      />
+
       {/* Full-Screen Dynamic Hue Glow Border */}
       <HueGlowBorder hue={hue} redAlertSecondsRemaining={redAlertSecondsRemaining} />
 

@@ -98,32 +98,16 @@ export const CardItem: React.FC<CardItemProps> = ({
     border: 'border-[#22242a] hover:border-[#ffb800]/50',
     iconBg: 'bg-[#ffb800]/10 text-[#ffb800] border-[#ffb800]/25',
     accent: 'text-[#ffb800]',
-    pill: 'Earn • Capital',
+    pill: 'Earn',
   };
 
-  if (isLottery) {
-    categoryTheme = {
-      badge: 'bg-[#ffb800]/15 text-[#ffb800] border-[#ffb800]/40',
-      border: 'border-[#ffb800]/30 hover:border-[#ffb800]/60',
-      iconBg: 'bg-[#ffb800]/15 text-[#ffb800] border-[#ffb800]/30',
-      accent: 'text-[#ffb800]',
-      pill: 'Earn • Lottery',
-    };
-  } else if (isGambling) {
-    categoryTheme = {
-      badge: 'bg-[#ffb800]/15 text-[#ffb800] border-[#ffb800]/40',
-      border: 'border-[#ffb800]/30 hover:border-[#ffb800]/60',
-      iconBg: 'bg-[#ffb800]/15 text-[#ffb800] border-[#ffb800]/30',
-      accent: 'text-[#ffb800]',
-      pill: 'Earn • Gambling',
-    };
-  } else if (card.category === 'grow') {
+  if (card.category === 'grow') {
     categoryTheme = {
       badge: 'bg-[#00d4ff]/10 text-[#00d4ff] border-[#00d4ff]/30',
       border: 'border-[#22242a] hover:border-[#00d4ff]/50',
       iconBg: 'bg-[#00d4ff]/10 text-[#00d4ff] border-[#00d4ff]/25',
       accent: 'text-[#00d4ff]',
-      pill: 'Grow • Actualize',
+      pill: 'Grow',
     };
   } else if (card.category === 'boon') {
     categoryTheme = {
@@ -131,7 +115,7 @@ export const CardItem: React.FC<CardItemProps> = ({
       border: 'border-[#22242a] hover:border-[#00ff95]/60',
       iconBg: 'bg-[#00ff95]/10 text-[#00ff95] border-[#00ff95]/30',
       accent: 'text-[#00ff95]',
-      pill: 'Boon • Altruism',
+      pill: 'Boon',
     };
   }
 

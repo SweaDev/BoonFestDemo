@@ -8,7 +8,7 @@ interface RulesModalProps {
 
 export const RulesModal: React.FC<RulesModalProps> = ({ onClose }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0c0d10]/95 backdrop-blur-xl overflow-y-auto">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#0c0d10]/95 backdrop-blur-xl overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

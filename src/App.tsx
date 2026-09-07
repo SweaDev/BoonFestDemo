@@ -612,6 +612,16 @@ export default function App() {
           onStartNewRun={handleStartNewRun}
           onRegisterAccount={handleRegisterAccount}
           onClaimGuestTrophy={handleClaimGuestTrophy}
+          onLogout={handleLogout}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenLeaderboard={() => setShowLeaderboard(true)}
+          onOpenProfile={() => {
+            setProfileTargetUser(username);
+            setShowProfile(true);
+          }}
+          onOpenRules={() => setShowRules(true)}
+          onToggleMute={() => setIsMuted(sounds.toggleMute())}
+          isMuted={isMuted}
         />
       )}
 

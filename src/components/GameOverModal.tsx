@@ -10,6 +10,13 @@ import {
   Compass,
   AlertTriangle,
   Lightbulb,
+  LogOut,
+  Settings,
+  BookOpen,
+  Award,
+  Volume2,
+  VolumeX,
+  User,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { GameOverResponse, Trophy } from '../types';
@@ -22,6 +29,13 @@ interface GameOverModalProps {
   onStartNewRun: () => void;
   onRegisterAccount: (username: string) => Promise<boolean>;
   onClaimGuestTrophy: (username: string) => Promise<Trophy | undefined>;
+  onLogout?: () => Promise<void> | void;
+  onOpenSettings?: () => void;
+  onOpenLeaderboard?: () => void;
+  onOpenProfile?: () => void;
+  onOpenRules?: () => void;
+  onToggleMute?: () => void;
+  isMuted?: boolean;
 }
 
 export const GameOverModal: React.FC<GameOverModalProps> = ({
@@ -31,6 +45,13 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   onStartNewRun,
   onRegisterAccount,
   onClaimGuestTrophy,
+  onLogout,
+  onOpenSettings,
+  onOpenLeaderboard,
+  onOpenProfile,
+  onOpenRules,
+  onToggleMute,
+  isMuted = false,
 }) => {
   const { isTop10, rank, postMortem, trophy: initialTrophy, requiresRegistration, telemetry } = gameOverData;
   const [trophy, setTrophy] = useState<Trophy | undefined>(initialTrophy);
@@ -39,6 +60,18 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   const [userError, setUserError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isRegisteredNow, setIsRegisteredNow] = useState(!isGuest);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogoutClick = async () => {
+    if (isLoggingOut || !onLogout) return;
+    setIsLoggingOut(true);
+    try {
+      await onLogout();
+      setIsRegisteredNow(false);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const handleRegisterAndClaim = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +128,90 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="w-full max-w-3xl my-6 rounded-2xl border border-[#22242a] bg-[#131418] p-5 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.85)] text-[#f0f2f5] flex flex-col gap-5"
       >
+        {/* Top Standard Controls & Session Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-[#22242a] text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[#ff3b5c] animate-pulse" />
+            <span className="text-[#8a8f98]">Active Session:</span>
+            <span className="font-mono font-bold text-[#f0f2f5] flex items-center gap-1.5">
+              {isGuest ? 'Guest User' : `@${currentUsername}`}
+              {currentUsername.toLowerCase() === 'dev' && (
+                <span className="px-1.5 py-0.2 rounded text-[10px] bg-[#00ff95]/15 text-[#00ff95] border border-[#00ff95]/30">
+                  DEV
+                </span>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {onToggleMute && (
+              <button
+                onClick={onToggleMute}
+                className="p-1.5 rounded-lg bg-[#1a1c22] border border-[#22242a] hover:bg-[#252830] text-[#8a8f98] hover:text-[#f0f2f5] transition cursor-pointer"
+                title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+              >
+                {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+              </button>
+            )}
+
+            {onOpenRules && (
+              <button
+                onClick={onOpenRules}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1c22] border border-[#22242a] hover:bg-[#252830] text-[#8a8f98] hover:text-[#f0f2f5] text-[11px] font-medium transition cursor-pointer"
+                title="View Game Codex & Rules"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#ffb800]" />
+                <span className="hidden sm:inline">Rules</span>
+              </button>
+            )}
+
+            {onOpenLeaderboard && (
+              <button
+                onClick={onOpenLeaderboard}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1c22] border border-[#22242a] hover:bg-[#252830] text-[#8a8f98] hover:text-[#f0f2f5] text-[11px] font-medium transition cursor-pointer"
+                title="View Global Leaderboard"
+              >
+                <TrophyIcon className="w-3.5 h-3.5 text-[#00ff95]" />
+                <span className="hidden sm:inline">Leaderboard</span>
+              </button>
+            )}
+
+            {onOpenProfile && (
+              <button
+                onClick={onOpenProfile}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1c22] border border-[#22242a] hover:bg-[#252830] text-[#8a8f98] hover:text-[#f0f2f5] text-[11px] font-medium transition cursor-pointer"
+                title="View Trophy Case"
+              >
+                <Award className="w-3.5 h-3.5 text-[#00d4ff]" />
+                <span className="hidden sm:inline">Trophies</span>
+              </button>
+            )}
+
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1c22] border border-[#22242a] hover:bg-[#252830] text-[#8a8f98] hover:text-[#f0f2f5] text-[11px] font-medium transition cursor-pointer"
+                title="Settings & Dev Security"
+              >
+                <Settings className="w-3.5 h-3.5 text-[#8a8f98]" />
+                <span className="hidden sm:inline">Settings</span>
+              </button>
+            )}
+
+            {onLogout && (
+              <button
+                onClick={handleLogoutClick}
+                disabled={isLoggingOut}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#ff3b5c]/15 border border-[#ff3b5c]/30 hover:bg-[#ff3b5c]/25 text-[#ff3b5c] text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                title="Log out of current account"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Header: Collapse State & Top-10 Banner */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#22242a] pb-4">
           <div>
@@ -106,8 +223,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 Duration: {Math.floor(telemetry.durationSeconds / 60)}m {Math.floor(telemetry.durationSeconds % 60)}s
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight font-sans">
-              Run Terminated
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight font-sans text-[#f0f2f5]">
+              Game Over
             </h2>
           </div>
 
@@ -285,14 +402,37 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <button
-            onClick={handleCopyShare}
-            className="flex items-center gap-1.5 text-xs text-[#8a8f98] hover:text-[#f0f2f5] transition cursor-pointer"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-[#00ff95]" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span>{copied ? 'Copied summary!' : 'Copy run summary'}</span>
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#22242a]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleCopyShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1c22] hover:bg-[#252830] border border-[#22242a] text-xs text-[#8a8f98] hover:text-[#f0f2f5] transition cursor-pointer"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-[#00ff95]" /> : <Share2 className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied summary!' : 'Copy run summary'}</span>
+            </button>
+
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1c22] hover:bg-[#252830] border border-[#22242a] text-xs text-[#8a8f98] hover:text-[#f0f2f5] transition cursor-pointer"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Settings</span>
+              </button>
+            )}
+
+            {onLogout && (
+              <button
+                onClick={handleLogoutClick}
+                disabled={isLoggingOut}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ff3b5c]/10 hover:bg-[#ff3b5c]/20 border border-[#ff3b5c]/30 text-xs text-[#ff3b5c] transition cursor-pointer disabled:opacity-50"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
+              </button>
+            )}
+          </div>
 
           <button
             disabled={requiresRegistration && !isRegisteredNow}

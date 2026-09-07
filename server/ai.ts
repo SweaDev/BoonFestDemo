@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { AIPostMortem, CardPayload, HiddenSlothData, RunTelemetry, SlothArchetype, Trophy } from '../src/types';
+import { AIPostMortem, CardPayload, HiddenSlothData, RunTelemetry, SlothArchetype, Trophy, AITaskId } from '../src/types';
+import { storage } from './storage';
 
 // Server-side lazy initialization with mandatory aistudio-build user agent
 let aiClient: GoogleGenAI | null = null;
@@ -165,8 +166,48 @@ const CURATED_SLOTH_TEMPLATES = [
 const slothCardBuffer: Array<{ card: CardPayload; hidden: HiddenSlothData }> = [];
 let isRefillingSlothBuffer = false;
 
+// Procedural fallback generator for Sloth cards (0ms latency, zero AI cost)
+export function getProceduralSlothCard(): { card: CardPayload; hidden: HiddenSlothData } {
+  const archetypes: SlothArchetype[] = ['lottery', 'gambling'];
+  const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
+  const matching = CURATED_SLOTH_TEMPLATES.filter(t => t.archetype === chosenArchetype);
+  const template = matching.length > 0 ? matching[Math.floor(Math.random() * matching.length)] : CURATED_SLOTH_TEMPLATES[0];
+  const cardId = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const card: CardPayload = {
+    id: cardId,
+    title: template.title,
+    category: template.disguisedCategory,
+    tier: 2,
+    cost: template.cost,
+    rewardDescription: template.rewardDescription,
+    description: template.description,
+    flavor: template.flavor,
+    iconName: template.iconName,
+  };
+
+  const hidden: HiddenSlothData = {
+    isSloth: true,
+    penalty: {
+      archetype: template.archetype,
+      entropySpike: template.entropySpike,
+      entropyRateMultiplier: template.entropyRateMultiplier,
+      phantomCredits: 0,
+      phantomDurationSec: 0,
+      initialCreditsGiven: 0,
+    },
+  };
+
+  return { card, hidden };
+}
+
 // Background worker to asynchronously refill the buffer without blocking turns
 export async function refillSlothBuffer() {
+  const aiConfig = storage.getAIConfig();
+  if (!aiConfig.globalEnabled || !aiConfig.tasks.sloth_cards.enabled) {
+    return;
+  }
+
   if (isRefillingSlothBuffer || slothCardBuffer.length >= 3) return;
   isRefillingSlothBuffer = true;
 
@@ -177,7 +218,9 @@ export async function refillSlothBuffer() {
     const archetypes: SlothArchetype[] = ['lottery', 'gambling'];
     const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
     const cardId = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
+    const taskConfig = aiConfig.tasks.sloth_cards;
+    const candidateModels = Array.from(new Set([taskConfig.model, 'gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest']));
+    const prompt = taskConfig.systemPrompt.replace('{archetype}', chosenArchetype);
 
     for (let i = 0; i < candidateModels.length; i++) {
       const model = candidateModels[i];
@@ -185,19 +228,7 @@ export async function refillSlothBuffer() {
         const response = await withTimeout(
           ai.models.generateContent({
             model,
-            contents: `You are generating an obvious sloth opportunity card for the pro-social game BoonFest.
-The sloth archetype MUST be: "${chosenArchetype}".
-
-Archetype guidelines:
-- "lottery": Fancy charity or grand lotteries (e.g., "Cancer Research Charity Mega-Lottery", "Clean Oceans Gala Lottery"). The title MUST explicitly contain the word "Lottery". Description states buying a lottery ticket hoping for a massive jackpot.
-- "gambling": Fancy high-stakes casino, roulette, dice, or sportsbook gambling (e.g., "Neon Oasis VIP Casino Gambling", "Cyber-Roulette Wheel of Fortune Gambling"). The title MUST explicitly contain the word "Gambling". Description states placing a high-stakes gambling wager.
-
-RULES:
-1. The title MUST clearly and explicitly contain either "Lottery" or "Gambling". Make it unmistakable.
-2. Category MUST be "earn".
-3. Reward description must promise big gains (e.g. "Jackpot: Win up to 500 Credits!" or "High-Roller: Win up to 650 Credits!").
-4. Cost is between 15 and 35 credits.
-5. Output strict JSON matching the schema.`,
+            contents: prompt,
             config: {
               responseMimeType: 'application/json',
               responseSchema: {
@@ -268,6 +299,13 @@ export function getInstantSlothCard(playerCredits: number, mind: number): {
   card: CardPayload;
   hidden: HiddenSlothData;
 } {
+  const aiConfig = storage.getAIConfig();
+
+  // If AI is disabled globally or for sloth cards, use pre-generated procedural content immediately
+  if (!aiConfig.globalEnabled || !aiConfig.tasks.sloth_cards.enabled) {
+    return getProceduralSlothCard();
+  }
+
   // Trigger non-blocking background refill if buffer is low
   if (slothCardBuffer.length < 2) {
     refillSlothBuffer().catch(() => {});
@@ -280,38 +318,8 @@ export function getInstantSlothCard(playerCredits: number, mind: number): {
     return item;
   }
 
-  // Instant curated procedural card
-  const archetypes: SlothArchetype[] = ['lottery', 'gambling'];
-  const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
-  const matching = CURATED_SLOTH_TEMPLATES.filter(t => t.archetype === chosenArchetype);
-  const template = matching.length > 0 ? matching[Math.floor(Math.random() * matching.length)] : CURATED_SLOTH_TEMPLATES[0];
-  const cardId = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-  const card: CardPayload = {
-    id: cardId,
-    title: template.title,
-    category: template.disguisedCategory,
-    tier: 2,
-    cost: template.cost,
-    rewardDescription: template.rewardDescription,
-    description: template.description,
-    flavor: template.flavor,
-    iconName: template.iconName,
-  };
-
-  const hidden: HiddenSlothData = {
-    isSloth: true,
-    penalty: {
-      archetype: template.archetype,
-      entropySpike: template.entropySpike,
-      entropyRateMultiplier: template.entropyRateMultiplier,
-      phantomCredits: 0,
-      phantomDurationSec: 0,
-      initialCreditsGiven: 0,
-    },
-  };
-
-  return { card, hidden };
+  // Instant curated procedural card fallback
+  return getProceduralSlothCard();
 }
 
 // Export generateDynamicSlothCard as an instant synchronous resolver
@@ -322,75 +330,15 @@ export function generateDynamicSlothCard(playerCredits: number, mind: number): {
   return getInstantSlothCard(playerCredits, mind);
 }
 
-export async function generateAIPostMortem(telemetry: RunTelemetry): Promise<AIPostMortem> {
-  const ai = getAI();
-  if (ai) {
-    const candidateModels = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
-    for (let i = 0; i < candidateModels.length; i++) {
-      const model = candidateModels[i];
-      try {
-        const response = await withTimeout(
-          ai.models.generateContent({
-            model,
-            contents: `Evaluate the completed session of BoonFest, an anti-sloth pro-social game.
-Telemetry data:
-- Player: ${telemetry.username} (Duration: ${Math.round(telemetry.durationSeconds)}s)
-- Final Credits: ${telemetry.credits}
-- Boon Points (Altruism): ${telemetry.boonPoints}
-- Growth Pillars: Mind Level ${telemetry.mind}, Body Level ${telemetry.body}, Spirit Level ${telemetry.spirit}
-- Deceptive Sloth Traps Fallen For: ${telemetry.slothTrapsTriggered.length > 0 ? telemetry.slothTrapsTriggered.join(', ') : 'None! Exceptional discernment.'}
-- Ending Entropy State: ${Math.round(telemetry.entropyAtEnd)}° (0° is red collapse, 120° is green flourishing)
-
-Tasks:
-1. Provide a sharp, evocative psychological Archetype Name (e.g. "The Dopamine Speculator", "The Ascetic Philanthropist", "The Burnout Capitalist", "The Discerning Steward").
-2. Behavioral Analysis: A concise, insightful narrative analyzing their balance of capital accumulation vs self-care vs generosity vs susceptibility to shortcuts.
-3. Key strengths (2 bullet items).
-4. Vulnerabilities (2 bullet items).
-5. Strategic tips (2 to 3 actionable, targeted tips for subsequent runs).`,
-            config: {
-              responseMimeType: 'application/json',
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  archetypeName: { type: Type.STRING },
-                  behavioralAnalysis: { type: Type.STRING },
-                  keyStrengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  vulnerabilities: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  strategicTips: { type: Type.ARRAY, items: { type: Type.STRING } },
-                },
-                required: ['archetypeName', 'behavioralAnalysis', 'keyStrengths', 'vulnerabilities', 'strategicTips'],
-              },
-            },
-          }),
-          5000
-        );
-
-        const rawText = response.text || '';
-        const cleaned = cleanJsonString(rawText);
-        if (cleaned) {
-          const parsed = JSON.parse(cleaned);
-          if (parsed.archetypeName && parsed.behavioralAnalysis) {
-            return parsed as AIPostMortem;
-          }
-        }
-      } catch {
-        if (i < candidateModels.length - 1) {
-          await sleep(350);
-          continue;
-        }
-      }
-    }
-    console.log('Notice: Gemini service currently under high demand; deployed deterministic behavioral coaching.');
-  }
-
-  // Deterministic high-quality fallback coaching
+// Deterministic high-quality fallback coaching (0ms, zero AI dependency)
+export function getDeterministicPostMortem(telemetry: RunTelemetry): AIPostMortem {
   const traps = telemetry.slothTrapsTriggered.length;
   let archetypeName = 'The Balanced Altruist';
   let analysis = 'You maintained a steady equilibrium between generating capital, personal self-actualization, and funding community boons.';
 
   if (traps >= 2) {
     archetypeName = 'The Dopamine Speculator';
-    analysis = `You fell victim to ${traps} deceptive shortcuts (gambling, illicit stimulants, or raffles). The siren call of quick phantom capital induced systemic default and accelerated crimson entropy.`;
+    analysis = `You fell victim to ${traps} deceptive shortcuts (gambling or charity lottery raffles). The siren call of instant payout induced systemic default and accelerated crimson entropy.`;
   } else if (telemetry.boonPoints < 200 && telemetry.credits > 250) {
     archetypeName = 'The Anxious Hoarder';
     analysis = 'You accumulated credits aggressively but hesitated to release capital into societal boons. Without active generative altruism, world entropy inevitably pulled the hue into terminal red.';
@@ -415,9 +363,138 @@ Tasks:
     ],
     strategicTips: [
       'Upgrade the Body pillar early: each level significantly dampens baseline entropy acceleration.',
-      'Scrutinize high-yield shortcuts: if an opportunity sounds too effortless (gambling, unverified stimulants, raffles), it is a deceptive sloth trap.',
+      'Scrutinize high-yield shortcuts: if an opportunity sounds too effortless (gambling or mega-lotteries), it is a deceptive sloth trap.',
       'Spend credits on Boons before the hue dips below 30° to maintain a comfortable green safety margin.',
     ],
+    generatedByAI: false,
+  };
+}
+
+export async function generateAIPostMortem(telemetry: RunTelemetry): Promise<AIPostMortem> {
+  const aiConfig = storage.getAIConfig();
+
+  // If AI is disabled globally or specifically for post-mortems, use deterministic coaching
+  if (!aiConfig.globalEnabled || !aiConfig.tasks.post_mortem.enabled) {
+    return getDeterministicPostMortem(telemetry);
+  }
+
+  const ai = getAI();
+  if (ai) {
+    const taskConfig = aiConfig.tasks.post_mortem;
+    const candidateModels = Array.from(new Set([taskConfig.model, 'gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest']));
+    const telemetrySummary = `- Player: ${telemetry.username} (Duration: ${Math.round(telemetry.durationSeconds)}s)
+- Final Credits: ${telemetry.credits}
+- Boon Points (Altruism): ${telemetry.boonPoints}
+- Growth Pillars: Mind Level ${telemetry.mind}, Body Level ${telemetry.body}, Spirit Level ${telemetry.spirit}
+- Deceptive Sloth Traps Fallen For: ${telemetry.slothTrapsTriggered.length > 0 ? telemetry.slothTrapsTriggered.join(', ') : 'None! Exceptional discernment.'}
+- Ending Entropy State: ${Math.round(telemetry.entropyAtEnd)}° (0° is red collapse, 120° is green flourishing)`;
+
+    const prompt = taskConfig.systemPrompt.replace('{telemetry}', telemetrySummary);
+
+    for (let i = 0; i < candidateModels.length; i++) {
+      const model = candidateModels[i];
+      try {
+        const response = await withTimeout(
+          ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  archetypeName: { type: Type.STRING },
+                  behavioralAnalysis: { type: Type.STRING },
+                  keyStrengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  vulnerabilities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  strategicTips: { type: Type.ARRAY, items: { type: Type.STRING } },
+                },
+                required: ['archetypeName', 'behavioralAnalysis', 'keyStrengths', 'vulnerabilities', 'strategicTips'],
+              },
+            },
+          }),
+          5000
+        );
+
+        const rawText = response.text || '';
+        const cleaned = cleanJsonString(rawText);
+        if (cleaned) {
+          const parsed = JSON.parse(cleaned);
+          if (parsed.archetypeName && parsed.behavioralAnalysis) {
+            return {
+              ...parsed,
+              generatedByAI: true,
+            } as AIPostMortem;
+          }
+        }
+      } catch {
+        if (i < candidateModels.length - 1) {
+          await sleep(350);
+          continue;
+        }
+      }
+    }
+  }
+
+  // Fallback to deterministic coaching
+  return getDeterministicPostMortem(telemetry);
+}
+
+// Procedural vector SVG trophy medal (0ms, zero AI dependency)
+export function getProceduralTrophy(
+  rank: number,
+  username: string,
+  score: number,
+  archetype: string
+): Trophy {
+  const trophyId = `trophy_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const goldColor = rank === 1 ? '#F59E0B' : rank <= 3 ? '#EAB308' : '#10B981';
+  const accentColor = rank === 1 ? '#FEF08A' : rank <= 3 ? '#FDE047' : '#6EE7B7';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+    <defs>
+      <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#064E3B" stop-opacity="0.9"/>
+        <stop offset="60%" stop-color="#022C22" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#02140F" stop-opacity="1"/>
+      </radialGradient>
+      <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${accentColor}"/>
+        <stop offset="50%" stop-color="${goldColor}"/>
+        <stop offset="100%" stop-color="#B45309"/>
+      </linearGradient>
+      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="6" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+    </defs>
+    <rect width="400" height="400" rx="36" fill="url(#bgGlow)"/>
+    <circle cx="200" cy="200" r="160" fill="none" stroke="url(#goldGrad)" stroke-width="3" opacity="0.4"/>
+    <circle cx="200" cy="200" r="145" fill="none" stroke="${goldColor}" stroke-width="2" stroke-dasharray="8 6" opacity="0.6"/>
+    
+    <!-- Outer Shield Wings -->
+    <path d="M120 170 C100 130 110 80 150 90 C160 120 170 150 175 180 Z" fill="url(#goldGrad)" opacity="0.8"/>
+    <path d="M280 170 C300 130 290 80 250 90 C240 120 230 150 225 180 Z" fill="url(#goldGrad)" opacity="0.8"/>
+    
+    <!-- Central Heraldic Emblem -->
+    <polygon points="200,95 270,140 270,230 200,285 130,230 130,140" fill="#064E3B" stroke="url(#goldGrad)" stroke-width="6" filter="url(#glow)"/>
+    
+    <!-- Star & Rank -->
+    <path d="M200 125 L212 158 L248 158 L219 179 L230 212 L200 192 L170 212 L181 179 L152 158 L188 158 Z" fill="url(#goldGrad)" />
+    
+    <text x="200" y="255" text-anchor="middle" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="28" fill="#ECFDF5" letter-spacing="2">TOP ${rank}</text>
+    <text x="200" y="325" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="700" font-size="16" fill="${goldColor}">BOONFEST ELITE</text>
+    <text x="200" y="350" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="500" font-size="12" fill="#9CA3AF">${score.toLocaleString()} PTS • @${username}</text>
+  </svg>`;
+
+  return {
+    id: trophyId,
+    title: `Elite Leaderboard Rank #${rank}`,
+    description: `Awarded to @${username} for achieving ${score.toLocaleString()} Boon Points with archetype "${archetype}".`,
+    rank,
+    score,
+    date: new Date().toISOString().split('T')[0],
+    imageUrl: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`,
+    badgeType: 'top10_elite',
   };
 }
 
@@ -427,23 +504,28 @@ export async function generateTrophyArtifact(
   score: number,
   archetype: string
 ): Promise<Trophy> {
-  const trophyId = `trophy_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-  let imageUrl = '';
+  const aiConfig = storage.getAIConfig();
+
+  // If AI is disabled globally or for trophy artifacts, use procedural SVG badge
+  if (!aiConfig.globalEnabled || !aiConfig.tasks.trophy_art.enabled) {
+    return getProceduralTrophy(rank, username, score, archetype);
+  }
 
   const ai = getAI();
   if (ai) {
+    const taskConfig = aiConfig.tasks.trophy_art;
+    const prompt = taskConfig.systemPrompt
+      .replace('{rank}', rank.toString())
+      .replace('{username}', username)
+      .replace('{score}', score.toLocaleString())
+      .replace('{archetype}', archetype);
+
     try {
       const response = await withTimeout(
         ai.models.generateContent({
-          model: 'gemini-3.1-flash-lite-image',
+          model: taskConfig.model || 'gemini-3.1-flash-lite-image',
           contents: {
-            parts: [
-              {
-                text: `A prestigious, flashy vector-style golden esports trophy medal emblem for game "BoonFest". 
-Rank #${rank} in Global Altruism Leaderboard. 
-Theme: Emerald green glowing laurels, polished gold star shield, geometric wings, crystal prism center, clean dark background, hyper-detailed minimalist digital badge.`,
-              },
-            ],
+            parts: [{ text: prompt }],
           },
           config: {
             imageConfig: {
@@ -451,70 +533,187 @@ Theme: Emerald green glowing laurels, polished gold star shield, geometric wings
             },
           },
         }),
-        5000
+        6000
       );
 
       for (const part of response.candidates?.[0]?.content?.parts || []) {
         if (part.inlineData?.data) {
-          imageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-          break;
+          const imageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          return {
+            id: `trophy_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            title: `Elite Leaderboard Rank #${rank}`,
+            description: `Awarded to @${username} for achieving ${score.toLocaleString()} Boon Points with archetype "${archetype}".`,
+            rank,
+            score,
+            date: new Date().toISOString().split('T')[0],
+            imageUrl,
+            badgeType: 'top10_elite',
+          };
         }
       }
     } catch {
-      // Gracefully fall back to vector SVG medal badge
+      // Fall through to procedural fallback
     }
   }
 
-  // If image generation was not available or failed, generate a bespoke high-status SVG badge data URL
-  if (!imageUrl) {
-    const goldColor = rank === 1 ? '#F59E0B' : rank <= 3 ? '#EAB308' : '#10B981';
-    const accentColor = rank === 1 ? '#FEF08A' : rank <= 3 ? '#FDE047' : '#6EE7B7';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
-      <defs>
-        <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#064E3B" stop-opacity="0.9"/>
-          <stop offset="60%" stop-color="#022C22" stop-opacity="0.95"/>
-          <stop offset="100%" stop-color="#02140F" stop-opacity="1"/>
-        </radialGradient>
-        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="${accentColor}"/>
-          <stop offset="50%" stop-color="${goldColor}"/>
-          <stop offset="100%" stop-color="#B45309"/>
-        </linearGradient>
-        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-      </defs>
-      <rect width="400" height="400" rx="36" fill="url(#bgGlow)"/>
-      <circle cx="200" cy="200" r="160" fill="none" stroke="url(#goldGrad)" stroke-width="3" opacity="0.4"/>
-      <circle cx="200" cy="200" r="145" fill="none" stroke="${goldColor}" stroke-width="2" stroke-dasharray="8 6" opacity="0.6"/>
-      
-      <!-- Outer Shield Wings -->
-      <path d="M120 170 C100 130 110 80 150 90 C160 120 170 150 175 180 Z" fill="url(#goldGrad)" opacity="0.8"/>
-      <path d="M280 170 C300 130 290 80 250 90 C240 120 230 150 225 180 Z" fill="url(#goldGrad)" opacity="0.8"/>
-      
-      <!-- Central Heraldic Emblem -->
-      <polygon points="200,95 270,140 270,230 200,285 130,230 130,140" fill="#064E3B" stroke="url(#goldGrad)" stroke-width="6" filter="url(#glow)"/>
-      
-      <!-- Star & Rank -->
-      <path d="M200 125 L212 158 L248 158 L219 179 L230 212 L200 192 L170 212 L181 179 L152 158 L188 158 Z" fill="url(#goldGrad)" />
-      
-      <text x="200" y="255" text-anchor="middle" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="28" fill="#ECFDF5" letter-spacing="2">TOP ${rank}</text>
-      <text x="200" y="325" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="700" font-size="16" fill="${goldColor}">BOONFEST ELITE</text>
-      <text x="200" y="350" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="500" font-size="12" fill="#9CA3AF">${score.toLocaleString()} PTS • @${username}</text>
-    </svg>`;
-    imageUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  return getProceduralTrophy(rank, username, score, archetype);
+}
+
+// Dev test executor to verify models and prompts in real-time
+export async function testAITask(
+  taskId: AITaskId,
+  customModel?: string,
+  customPrompt?: string
+): Promise<{ success: boolean; durationMs: number; output: any; error?: string }> {
+  const startTime = Date.now();
+  const ai = getAI();
+  if (!ai) {
+    return {
+      success: false,
+      durationMs: Date.now() - startTime,
+      output: null,
+      error: 'GEMINI_API_KEY is not configured on the server.',
+    };
   }
 
-  return {
-    id: trophyId,
-    title: `Elite Leaderboard Rank #${rank}`,
-    description: `Awarded to @${username} for achieving ${score.toLocaleString()} Boon Points with archetype "${archetype}".`,
-    rank,
-    score,
-    date: new Date().toISOString().split('T')[0],
-    imageUrl,
-    badgeType: 'top10_elite',
-  };
+  const aiConfig = storage.getAIConfig();
+  const taskConfig = aiConfig.tasks[taskId];
+  if (!taskConfig) {
+    return {
+      success: false,
+      durationMs: Date.now() - startTime,
+      output: null,
+      error: `Unknown task ID: ${taskId}`,
+    };
+  }
+
+  const model = customModel || taskConfig.model;
+  const promptTemplate = customPrompt || taskConfig.systemPrompt;
+
+  try {
+    if (taskId === 'sloth_cards') {
+      const prompt = promptTemplate.replace('{archetype}', 'lottery');
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                category: { type: Type.STRING },
+                description: { type: Type.STRING },
+                flavor: { type: Type.STRING },
+                cost: { type: Type.NUMBER },
+                rewardDescription: { type: Type.STRING },
+                iconName: { type: Type.STRING },
+              },
+              required: ['title', 'category', 'description', 'flavor', 'cost', 'rewardDescription', 'iconName'],
+            },
+          },
+        }),
+        8000
+      );
+      const rawText = cleanJsonString(response.text || '');
+      const parsed = JSON.parse(rawText);
+      return {
+        success: true,
+        durationMs: Date.now() - startTime,
+        output: parsed,
+      };
+    } else if (taskId === 'post_mortem') {
+      const sampleTelemetry = `- Player: test_player (Duration: 180s)
+- Final Credits: 320
+- Boon Points (Altruism): 540
+- Growth Pillars: Mind Level 3, Body Level 2, Spirit Level 4
+- Deceptive Sloth Traps Fallen For: Neon Oasis VIP Casino Gambling
+- Ending Entropy State: 72° (Flourishing)`;
+      const prompt = promptTemplate.replace('{telemetry}', sampleTelemetry);
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                archetypeName: { type: Type.STRING },
+                behavioralAnalysis: { type: Type.STRING },
+                keyStrengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+                vulnerabilities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                strategicTips: { type: Type.ARRAY, items: { type: Type.STRING } },
+              },
+              required: ['archetypeName', 'behavioralAnalysis', 'keyStrengths', 'vulnerabilities', 'strategicTips'],
+            },
+          },
+        }),
+        8000
+      );
+      const rawText = cleanJsonString(response.text || '');
+      const parsed = JSON.parse(rawText);
+      return {
+        success: true,
+        durationMs: Date.now() - startTime,
+        output: parsed,
+      };
+    } else if (taskId === 'trophy_art') {
+      const prompt = promptTemplate
+        .replace('{rank}', '1')
+        .replace('{username}', 'TopChampion')
+        .replace('{score}', '5,000')
+        .replace('{archetype}', 'The Planetary Architect');
+
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model,
+          contents: {
+            parts: [{ text: prompt }],
+          },
+          config: {
+            imageConfig: {
+              aspectRatio: '1:1',
+            },
+          },
+        }),
+        10000
+      );
+
+      for (const part of response.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData?.data) {
+          const imageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          return {
+            success: true,
+            durationMs: Date.now() - startTime,
+            output: {
+              imageUrl,
+              format: part.inlineData.mimeType,
+            },
+          };
+        }
+      }
+      return {
+        success: false,
+        durationMs: Date.now() - startTime,
+        output: null,
+        error: 'No image data returned in model response candidate parts.',
+      };
+    }
+
+    return {
+      success: false,
+      durationMs: Date.now() - startTime,
+      output: null,
+      error: `Unsupported task: ${taskId}`,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      durationMs: Date.now() - startTime,
+      output: null,
+      error: err?.message || 'Error occurred during AI task test execution',
+    };
+  }
 }

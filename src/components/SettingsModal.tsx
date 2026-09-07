@@ -18,11 +18,20 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  Users,
+  UserCheck,
+  UserX,
+  RotateCcw,
+  Search,
+  CheckCircle2,
+  Ban,
+  Bot,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { DevConfigStatus, DevGrantRecord, PlaytimeStats } from '../types';
+import { DevConfigStatus, DevGrantRecord, PlaytimeStats, ManagedUserRecord } from '../types';
 import { GoogleSignInModal } from './GoogleSignInModal';
 import { GoogleAuthPayload } from '../lib/googleAuth';
+import { DevAISettingsTab } from './DevAISettingsTab';
 
 export const RESTRICTED_USERNAMES_LIST = [
   'dev',
@@ -70,11 +79,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onGoogleAuth,
   onAddToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'account' | 'dev_security' | 'dev_grants'>('account');
+  const [activeTab, setActiveTab] = useState<'account' | 'users' | 'ai' | 'dev_security' | 'dev_grants'>('account');
 
   // Dev Config & Grants State
   const [devConfig, setDevConfig] = useState<DevConfigStatus | null>(null);
   const [isLoadingDevConfig, setIsLoadingDevConfig] = useState(false);
+
+  // Dev User Management State
+  const [managedUsers, setManagedUsers] = useState<ManagedUserRecord[]>([]);
+  const [isLoadingManagedUsers, setIsLoadingManagedUsers] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userActionInProgress, setUserActionInProgress] = useState<string | null>(null);
+
+  // User Password Reset State
+  const [resettingUser, setResettingUser] = useState<string | null>(null);
+  const [newResetPassword, setNewResetPassword] = useState('');
+  const [showResetPasswordText, setShowResetPasswordText] = useState(false);
+  const [isSubmittingResetPassword, setIsSubmittingResetPassword] = useState(false);
 
   // Dev Password Form State
   const [newPassword, setNewPassword] = useState('');
@@ -176,6 +197,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       if (res.ok) {
         const data: DevConfigStatus = await res.json();
         setDevConfig(data);
+        if (data.users) {
+          setManagedUsers(data.users);
+        }
       }
     } catch {
       // Non-critical fetch failure
@@ -184,14 +208,139 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  // Fetch managed users list specifically for Users tab
+  const fetchManagedUsers = async () => {
+    if (!isMainDev) return;
+    setIsLoadingManagedUsers(true);
+    try {
+      const res = await fetch(`/api/dev/users?username=${encodeURIComponent(currentUsername)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.users) {
+          setManagedUsers(data.users);
+        }
+      }
+    } catch {
+      onAddToast('error', 'Failed to refresh user list.');
+    } finally {
+      setIsLoadingManagedUsers(false);
+    }
+  };
+
+  // Dev: Toggle user enable / disable status
+  const handleToggleUserStatus = async (targetUsername: string, currentDisabled: boolean) => {
+    if (!isMainDev) return;
+    const cleanTarget = targetUsername.trim();
+    if (cleanTarget.toLowerCase() === 'dev') {
+      onAddToast('error', 'Permanent Dev account cannot be disabled.');
+      return;
+    }
+
+    const nextDisabled = !currentDisabled;
+    setUserActionInProgress(cleanTarget);
+    try {
+      const res = await fetch('/api/dev/users/toggle-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentUsername,
+          targetUsername: cleanTarget,
+          disabled: nextDisabled,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onAddToast('success', data.message || `User @${cleanTarget} ${nextDisabled ? 'disabled' : 'enabled'}.`);
+        if (data.users) {
+          setManagedUsers(data.users);
+        } else {
+          fetchManagedUsers();
+        }
+      } else {
+        onAddToast('error', data.error || 'Failed to update user status.');
+      }
+    } catch {
+      onAddToast('error', 'Network error updating user status.');
+    } finally {
+      setUserActionInProgress(null);
+    }
+  };
+
+  // Dev: Reset user password
+  const handleResetUserPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isMainDev || !resettingUser) return;
+    if (!newResetPassword || newResetPassword.trim().length < 4) {
+      onAddToast('warning', 'New password must be at least 4 characters long.');
+      return;
+    }
+
+    setIsSubmittingResetPassword(true);
+    try {
+      const res = await fetch('/api/dev/users/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentUsername,
+          targetUsername: resettingUser,
+          newPassword: newResetPassword.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onAddToast('success', data.message || `Password reset for @${resettingUser}.`);
+        setResettingUser(null);
+        setNewResetPassword('');
+      } else {
+        onAddToast('error', data.error || 'Failed to reset user password.');
+      }
+    } catch {
+      onAddToast('error', 'Network error resetting password.');
+    } finally {
+      setIsSubmittingResetPassword(false);
+    }
+  };
+
+  // Dev: Reset user time restrictions & active lockout
+  const handleResetTimeRestrictions = async (targetUsername: string) => {
+    if (!isMainDev) return;
+    const cleanTarget = targetUsername.trim();
+    setUserActionInProgress(cleanTarget);
+    try {
+      const res = await fetch('/api/dev/users/reset-time-restrictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentUsername,
+          targetUsername: cleanTarget,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onAddToast('success', data.message || `Time restrictions reset for @${cleanTarget}.`);
+        if (data.users) {
+          setManagedUsers(data.users);
+        } else {
+          fetchManagedUsers();
+        }
+      } else {
+        onAddToast('error', data.error || 'Failed to reset time restrictions.');
+      }
+    } catch {
+      onAddToast('error', 'Network error resetting time restrictions.');
+    } finally {
+      setUserActionInProgress(null);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchDevConfig();
-      if (isMainDev && activeTab === 'account') {
-        // keep account tab or dev tab
+      if (activeTab === 'users' && isMainDev) {
+        fetchManagedUsers();
       }
     }
-  }, [isOpen, currentUsername]);
+  }, [isOpen, currentUsername, activeTab]);
 
   if (!isOpen) return null;
 
@@ -460,6 +609,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {isMainDev && (
             <>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'users'
+                    ? 'border-[#00ff95] text-[#00ff95]'
+                    : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Users</span>
+                {managedUsers.length > 0 && (
+                  <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-[#1c1f26] text-[#8a8f98] font-mono">
+                    {managedUsers.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab('ai')}
+                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'ai'
+                    ? 'border-[#00ff95] text-[#00ff95]'
+                    : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
+                }`}
+              >
+                <Bot className="w-3.5 h-3.5" />
+                <span>AI</span>
+                <span className="px-1.5 py-0.2 text-[9px] rounded-full bg-[#00ff95]/15 text-[#00ff95] font-mono border border-[#00ff95]/30">
+                  Gemini
+                </span>
+              </button>
+
               <button
                 onClick={() => setActiveTab('dev_security')}
                 className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
@@ -938,6 +1119,360 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </p>
               </div>
             </div>
+          )}
+
+          {/* TAB: Users (Dev User Management) */}
+          {activeTab === 'users' && isMainDev && (
+            <div className="space-y-4">
+              {/* Header & Stats Overview */}
+              <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#00ff95]/10 flex items-center justify-center text-[#00ff95]">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[#f0f2f5]">User Account Management</h4>
+                      <p className="text-[11px] text-[#8a8f98]">
+                        Enable or disable accounts, reset credentials, and clear time restrictions & lockouts.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={fetchManagedUsers}
+                    disabled={isLoadingManagedUsers}
+                    title="Refresh user list"
+                    className="p-2 rounded-lg bg-[#1a1c22] border border-[#22242a] hover:bg-[#252830] text-[#8a8f98] hover:text-[#f0f2f5] transition cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingManagedUsers ? 'animate-spin text-[#00ff95]' : ''}`} />
+                  </button>
+                </div>
+
+                {/* Search Bar & Summary Badges */}
+                <div className="pt-1 flex items-center gap-2 flex-wrap">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8f98]" />
+                    <input
+                      type="text"
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      placeholder="Search accounts by username..."
+                      className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                    />
+                    {userSearchQuery && (
+                      <button
+                        onClick={() => setUserSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8a8f98] hover:text-[#f0f2f5] text-xs"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono font-semibold">
+                    <span className="px-2 py-1 rounded bg-[#131418] border border-[#22242a] text-[#8a8f98]">
+                      Total: <strong className="text-[#f0f2f5]">{managedUsers.length}</strong>
+                    </span>
+                    <span className="px-2 py-1 rounded bg-[#00ff95]/10 border border-[#00ff95]/20 text-[#00ff95]">
+                      Active: {managedUsers.filter(u => !u.disabled).length}
+                    </span>
+                    {managedUsers.some(u => u.disabled) && (
+                      <span className="px-2 py-1 rounded bg-[#ff3b5c]/10 border border-[#ff3b5c]/20 text-[#ff3b5c]">
+                        Disabled: {managedUsers.filter(u => u.disabled).length}
+                      </span>
+                    )}
+                    {managedUsers.some(u => u.pacing?.isLockedOut) && (
+                      <span className="px-2 py-1 rounded bg-[#ffb800]/10 border border-[#ffb800]/20 text-[#ffb800]">
+                        Locked: {managedUsers.filter(u => u.pacing?.isLockedOut).length}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Users List Cards */}
+              <div className="space-y-3">
+                {managedUsers
+                  .filter((u) => u.username.toLowerCase().includes(userSearchQuery.toLowerCase().trim()))
+                  .map((user) => {
+                    const isDevAccount = user.username.toLowerCase() === 'dev';
+                    const isActionLoading = userActionInProgress === user.username;
+                    const isResettingThisUser = resettingUser === user.username;
+
+                    return (
+                      <div
+                        key={user.username}
+                        className={`p-4 rounded-xl border transition space-y-3 ${
+                          user.disabled
+                            ? 'bg-[#140b0e] border-[#ff3b5c]/30'
+                            : 'bg-[#0c0d10] border-[#22242a]'
+                        }`}
+                      >
+                        {/* User Header */}
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                isDevAccount
+                                  ? 'bg-[#00ff95]/15 text-[#00ff95]'
+                                  : user.isTemporaryDev
+                                  ? 'bg-[#ffb800]/15 text-[#ffb800]'
+                                  : 'bg-[#1a1c22] text-[#8a8f98]'
+                              }`}
+                            >
+                              {isDevAccount ? (
+                                <Crown className="w-4 h-4" />
+                              ) : user.isTemporaryDev ? (
+                                <Clock className="w-4 h-4" />
+                              ) : (
+                                <Users className="w-4 h-4" />
+                              )}
+                            </div>
+
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-sm font-bold font-mono text-[#f0f2f5]">
+                                  @{user.username}
+                                </span>
+                                {isDevAccount && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#00ff95]/15 text-[#00ff95] border border-[#00ff95]/30 font-bold">
+                                    Main Dev
+                                  </span>
+                                )}
+                                {user.isTemporaryDev && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#ffb800]/15 text-[#ffb800] border border-[#ffb800]/30 font-bold">
+                                    Temp Dev
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-[#555a65] font-mono capitalize">
+                                  ({user.authProvider || 'local'})
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-[#8a8f98]">
+                                Runs: <span className="text-[#f0f2f5] font-mono">{user.runsCount}</span> · Trophies: <span className="text-[#f0f2f5] font-mono">{user.trophiesCount}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <div>
+                            {user.disabled ? (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-[#ff3b5c]/15 text-[#ff3b5c] border border-[#ff3b5c]/30 flex items-center gap-1">
+                                <Ban className="w-3 h-3" />
+                                DISABLED
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-[#00ff95]/15 text-[#00ff95] border border-[#00ff95]/30 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                ACTIVE
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Pacing & Time Restriction Status Strip */}
+                        {isDevAccount ? (
+                          <div className="p-2.5 rounded-lg bg-[#131418] border border-[#22242a] text-[11px] text-[#00ff95] flex items-center gap-2">
+                            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                            <span>Pacing Exempt (Permanent Dev bypasses all session and daily time limits)</span>
+                          </div>
+                        ) : user.pacing?.isLockedOut ? (
+                          <div className="p-2.5 rounded-lg bg-[#ff3b5c]/10 border border-[#ff3b5c]/30 text-[11px] text-[#ff3b5c] flex items-center justify-between flex-wrap gap-2">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                              <span>
+                                <strong>Locked Out:</strong> {user.pacing.lockoutRemainingSeconds}s remaining ({user.pacing.lockoutReason === '24h_cap' ? '24h daily cap (25m) reached' : '30m rolling session rule (5m) reached'})
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleResetTimeRestrictions(user.username)}
+                              disabled={isActionLoading}
+                              className="px-2 py-0.5 rounded bg-[#ff3b5c]/25 hover:bg-[#ff3b5c]/40 text-white text-[10px] font-bold transition cursor-pointer"
+                            >
+                              Clear Lockout Now
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-2.5 rounded-lg bg-[#131418] border border-[#22242a] text-[11px] text-[#8a8f98] flex items-center justify-between flex-wrap gap-2">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="w-3 h-3 text-[#8a8f98]" />
+                                <span>30m Window: <strong className="text-[#f0f2f5] font-mono">{Math.round((user.pacing?.activeSecondsIn30m || 0) / 60)}m / 5m</strong></span>
+                              </div>
+                              <span className="text-[#2c3038]">|</span>
+                              <div>
+                                <span>24h Cap: <strong className="text-[#f0f2f5] font-mono">{Math.round((user.pacing?.activeSecondsIn24h || 0) / 60)}m / 25m</strong></span>
+                              </div>
+                            </div>
+                            {((user.pacing?.activeSecondsIn30m || 0) > 0 || (user.pacing?.activeSecondsIn24h || 0) > 0) && (
+                              <button
+                                onClick={() => handleResetTimeRestrictions(user.username)}
+                                disabled={isActionLoading}
+                                className="text-[10px] text-[#00ff95] hover:underline cursor-pointer flex items-center gap-1"
+                              >
+                                <RotateCcw className="w-2.5 h-2.5" />
+                                Reset Playtime
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Actions Control Bar */}
+                        <div className="flex items-center justify-between pt-2 border-t border-[#1c1f26] gap-2 flex-wrap">
+                          {/* Enable / Disable Button */}
+                          <div>
+                            {isDevAccount ? (
+                              <button
+                                disabled
+                                title="Permanent Dev account cannot be disabled"
+                                className="px-3 py-1.5 rounded-lg bg-[#16181e] border border-[#22242a] text-[#555a65] text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed"
+                              >
+                                <Lock className="w-3.5 h-3.5" />
+                                Dev Protected
+                              </button>
+                            ) : user.disabled ? (
+                              <button
+                                onClick={() => handleToggleUserStatus(user.username, true)}
+                                disabled={isActionLoading}
+                                className="px-3 py-1.5 rounded-lg bg-[#00ff95]/15 hover:bg-[#00ff95]/25 border border-[#00ff95]/30 text-[#00ff95] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" />
+                                {isActionLoading ? 'Enabling...' : 'Enable User'}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleToggleUserStatus(user.username, false)}
+                                disabled={isActionLoading}
+                                className="px-3 py-1.5 rounded-lg bg-[#ff3b5c]/10 hover:bg-[#ff3b5c]/20 border border-[#ff3b5c]/25 text-[#ff3b5c] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                                {isActionLoading ? 'Disabling...' : 'Disable User'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Secondary Action Buttons */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                if (isResettingThisUser) {
+                                  setResettingUser(null);
+                                  setNewResetPassword('');
+                                } else {
+                                  setResettingUser(user.username);
+                                  setNewResetPassword(`${user.username}!`);
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                                isResettingThisUser
+                                  ? 'bg-[#00ff95]/15 text-[#00ff95] border-[#00ff95]/40'
+                                  : 'bg-[#1a1c22] hover:bg-[#252830] text-[#f0f2f5] border-[#22242a]'
+                              }`}
+                            >
+                              <Key className="w-3.5 h-3.5 text-[#00ff95]" />
+                              <span>{isResettingThisUser ? 'Close Form' : 'Reset Password'}</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleResetTimeRestrictions(user.username)}
+                              disabled={isActionLoading || isDevAccount}
+                              className="px-3 py-1.5 rounded-lg bg-[#1a1c22] hover:bg-[#252830] border border-[#22242a] text-[#f0f2f5] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 text-[#00ff95]" />
+                              <span>{isActionLoading ? 'Resetting...' : 'Reset Time Limits'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Inline Password Reset Drawer */}
+                        {isResettingThisUser && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-2 p-3.5 rounded-xl bg-[#131418] border border-[#00ff95]/30 space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-[#00ff95] flex items-center gap-1.5">
+                                <Key className="w-3.5 h-3.5" />
+                                Reset Password for @{user.username}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setResettingUser(null)}
+                                className="text-[#8a8f98] hover:text-[#f0f2f5] text-xs cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+
+                            <form onSubmit={handleResetUserPassword} className="space-y-2.5">
+                              <div className="relative">
+                                <input
+                                  type={showResetPasswordText ? 'text' : 'password'}
+                                  value={newResetPassword}
+                                  onChange={(e) => setNewResetPassword(e.target.value)}
+                                  placeholder="Enter new password (min 4 chars)..."
+                                  className="w-full px-3 py-2 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95] pr-10"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowResetPasswordText(!showResetPasswordText)}
+                                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8a8f98] hover:text-[#f0f2f5] cursor-pointer"
+                                >
+                                  {showResetPasswordText ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setNewResetPassword(`${user.username}!`)}
+                                  className="text-[11px] text-[#8a8f98] hover:text-[#00ff95] transition cursor-pointer font-mono underline"
+                                >
+                                  Use default pattern: "{user.username}!"
+                                </button>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setResettingUser(null)}
+                                    className="px-3 py-1.5 rounded-lg bg-[#1a1c22] text-[#8a8f98] hover:text-[#f0f2f5] text-xs font-semibold cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    disabled={isSubmittingResetPassword || !newResetPassword.trim()}
+                                    className="px-4 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#00e686] text-black text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                                  >
+                                    {isSubmittingResetPassword ? 'Saving...' : 'Set Password'}
+                                  </button>
+                                </div>
+                              </div>
+                            </form>
+                          </motion.div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                {managedUsers.filter((u) => u.username.toLowerCase().includes(userSearchQuery.toLowerCase().trim())).length === 0 && (
+                  <div className="p-8 text-center rounded-xl bg-[#0c0d10] border border-[#22242a] text-[#8a8f98] text-xs">
+                    No registered user accounts matching "{userSearchQuery}".
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: AI (In-Game AI Usage & Model Management) */}
+          {activeTab === 'ai' && (isMainDev || isDevUser) && (
+            <DevAISettingsTab
+              currentUsername={currentUsername}
+              onAddToast={onAddToast}
+            />
           )}
 
           {/* TAB 2: Dev Security / Password Configuration (Main Dev Only) */}

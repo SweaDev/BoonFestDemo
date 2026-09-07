@@ -476,9 +476,7 @@
       "createdAt": 1788750088523,
       "runsCount": 0,
       "trophies": [],
-      "runs": [],
-      "lockoutUntil": 1788753309328,
-      "lockoutReason": "30m_rule"
+      "runs": []
     },
     "foo": {
       "username": "foo",
@@ -548,151 +546,60 @@
       "authProvider": "google",
       "email": "player_1788752563118@gmail.com",
       "googleId": "g_1788752563118"
+    },
+    "demouser1": {
+      "username": "demouser1",
+      "createdAt": 1788756578799,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": [],
+      "passwordHash": "abedf4cd0c0bc8b46897e1ec5b90c8781cfb670caed3b23c22fdaf378517fd2322e995f9447c4ec4fc00f508a9b886d6254cc802fca2ca6898fb31592586a52a",
+      "salt": "e462d506be0b399f013f353e81f12223",
+      "authProvider": "local",
+      "disabled": false
+    },
+    "demouser2": {
+      "username": "demouser2",
+      "createdAt": 1788756578800,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": [],
+      "passwordHash": "32a7375dbacd4078f39d21bd331b2c98b843cb7f5d70292bd40eaee1851c722368c16b8430ffe94263b29c33eed20a67873f525ee9f615ab44f8ed5d1b0fc6cb",
+      "salt": "2f0f2c752577e4d0eb59dc3a02d482ed",
+      "authProvider": "local"
+    },
+    "demouser3": {
+      "username": "demouser3",
+      "createdAt": 1788756578801,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": [],
+      "passwordHash": "f0f70fed9a7750bf4f263fe5df5cdde79c31bbbdf059f6b20e10263d07074f66c7dda509d0002c2358eadb2e33480e5a8a7341a466cc3659ed4812e0864e2b34",
+      "salt": "5c98e3ebc3b645864760aaf8de77d123",
+      "authProvider": "local"
+    },
+    "demouser4": {
+      "username": "demouser4",
+      "createdAt": 1788756578802,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": [],
+      "passwordHash": "a94690d10cb5a9deb20ca33a0d53e505a95d09ab43e111610fffee95a0442857632e2a8e2a0ebcc99c7953c3cd733e4b7e331e508064b659444dab063f176d92",
+      "salt": "d9f04196d34e1854034dc19ed25b19fb",
+      "authProvider": "local"
+    },
+    "demouser5": {
+      "username": "demouser5",
+      "createdAt": 1788756578802,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": [],
+      "passwordHash": "27ddf09f4d4e7e4039ad704541b20b59175e233329238bf3199b5c77fb1158c48e9db13c1b1d4a6343e5b9b49be70e6350826b3f75ab91725503f61a52f96ffb",
+      "salt": "dbdaea9ca2384a049bcadf8336d89d9e",
+      "authProvider": "local"
     }
   },
   "playtimeLogs": {
-    "Guest": [
-      {
-        "timestamp": 1788750119500,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750119502,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750119504,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750119506,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750119508,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750161621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750166622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750171622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750176623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750181621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750186622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750191622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750196620,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750201622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750206621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750211623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750216622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750221621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750226624,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750231624,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750236621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750241623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750246622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750251623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750256623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750261623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750266625,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750271624,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750276629,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750281621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750286621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750291622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750296621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750301640,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750306621,
-        "durationSeconds": 5
-      }
-    ],
     "fmy": [
       {
         "timestamp": 1788737981624,
@@ -1172,148 +1079,6 @@
       },
       {
         "timestamp": 1788741222658,
-        "durationSeconds": 5
-      }
-    ],
-    "guest": [
-      {
-        "timestamp": 1788750119500,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750119502,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750119504,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750119506,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750119508,
-        "durationSeconds": 30
-      },
-      {
-        "timestamp": 1788750161621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750166622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750171622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750176623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750181621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750186622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750191622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750196620,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750201622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750206621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750211623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750216622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750221621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750226624,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750231624,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750236621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750241623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750246622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750251623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750256623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750261623,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750266625,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750271624,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750276629,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750281621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750286621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750291622,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750296621,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750301640,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788750306621,
         "durationSeconds": 5
       }
     ],

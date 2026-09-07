@@ -73,11 +73,26 @@ export interface DevGrantRecord {
   remainingSeconds: number;
 }
 
+export interface ManagedUserRecord {
+  username: string;
+  createdAt: number;
+  authProvider?: string;
+  disabled: boolean;
+  disabledAt?: number;
+  runsCount: number;
+  trophiesCount: number;
+  isDev: boolean;
+  isMainDev: boolean;
+  isTemporaryDev: boolean;
+  pacing: PlaytimeStats;
+}
+
 export interface DevConfigStatus {
   isMainDev: boolean;
   hasPassword: boolean;
   activeGrants: DevGrantRecord[];
   registeredUsers: string[];
+  users?: ManagedUserRecord[];
 }
 
 export interface ActivePhantomCredit {
@@ -186,6 +201,32 @@ export interface AIPostMortem {
   keyStrengths: string[];
   vulnerabilities: string[];
   strategicTips: string[];
+  generatedByAI?: boolean;
+}
+
+export type AITaskId = 'sloth_cards' | 'post_mortem' | 'trophy_art';
+
+export interface AITaskConfig {
+  id: AITaskId;
+  name: string;
+  description: string;
+  enabled: boolean;
+  model: string;
+  defaultModel: string;
+  availableModels: string[];
+  systemPrompt: string;
+  defaultPrompt: string;
+  temperature?: number;
+}
+
+export interface AIUsageConfig {
+  globalEnabled: boolean;
+  tasks: {
+    sloth_cards: AITaskConfig;
+    post_mortem: AITaskConfig;
+    trophy_art: AITaskConfig;
+  };
+  lastUpdated?: number;
 }
 
 export interface GameOverResponse {

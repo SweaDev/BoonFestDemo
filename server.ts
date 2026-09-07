@@ -4,11 +4,13 @@ dotenv.config();
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { generateAIPostMortem, generateDynamicSlothCard, getInstantSlothCard, generateTrophyArtifact } from './server/ai';
+import { generateAIPostMortem, generateDynamicSlothCard, getInstantSlothCard, generateTrophyArtifact, testAITask } from './server/ai';
 import { BASE_BOON_CARDS, BASE_EARN_CARDS, BASE_GROW_CARDS } from './server/data/cardPool';
 import { storage, isRestrictedUsername, RESTRICTED_USERNAMES } from './server/storage';
 import {
   ActivePhantomCredit,
+  AITaskId,
+  AIUsageConfig,
   CardPayload,
   ExecuteCardResult,
   GameOverResponse,
@@ -276,6 +278,13 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
 
+  // Check if account is disabled by dev
+  if (user.disabled) {
+    return res.status(403).json({
+      error: 'This account has been disabled by the developer. Please contact support.',
+    });
+  }
+
   // If user registered with Google and has no local password
   if (user.authProvider === 'google' && !user.passwordHash) {
     return res.status(400).json({
@@ -505,6 +514,7 @@ app.get('/api/dev/status', (req, res) => {
     hasPassword,
     activeGrants: devStatus.isMainDev ? storage.getDevGrants() : [],
     registeredUsers: devStatus.isMainDev ? storage.getAllRegisteredUsers() : [],
+    users: devStatus.isMainDev ? storage.getUsersManagementList() : [],
   });
 });
 
@@ -590,6 +600,182 @@ app.post('/api/dev/revoke-status', (req, res) => {
     message: `Dev status revoked for @${targetUsername}.`,
     activeGrants,
   });
+});
+
+// Dev User Management: Get list of all users with stats, status & pacing
+app.get('/api/dev/users', (req, res) => {
+  const cleanCaller = (req.query.username as string || '').toLowerCase().trim();
+  if (cleanCaller !== 'dev') {
+    return res.status(403).json({ error: 'Only the Main Dev user can access user management.' });
+  }
+
+  const users = storage.getUsersManagementList();
+  res.json({ users });
+});
+
+// Dev User Management: Enable or Disable a user
+app.post('/api/dev/users/toggle-status', (req, res) => {
+  const { currentUsername, targetUsername, disabled } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  if (cleanCaller !== 'dev') {
+    return res.status(403).json({ error: 'Only the Main Dev user can manage users.' });
+  }
+
+  if (!targetUsername) {
+    return res.status(400).json({ error: 'Target username is required.' });
+  }
+
+  const cleanTarget = targetUsername.toLowerCase().trim().replace(/^@/, '');
+  if (cleanTarget === 'dev') {
+    return res.status(400).json({ error: 'The "dev" user cannot be disabled.' });
+  }
+
+  const success = storage.setUserDisabled(cleanTarget, Boolean(disabled));
+  if (!success) {
+    return res.status(404).json({ error: `User '${targetUsername}' not found.` });
+  }
+
+  const users = storage.getUsersManagementList();
+  res.json({
+    success: true,
+    message: disabled ? `User @${targetUsername} has been disabled.` : `User @${targetUsername} has been enabled.`,
+    users,
+  });
+});
+
+// Dev User Management: Reset user's password
+app.post('/api/dev/users/reset-password', (req, res) => {
+  const { currentUsername, targetUsername, newPassword } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  if (cleanCaller !== 'dev') {
+    return res.status(403).json({ error: 'Only the Main Dev user can reset passwords.' });
+  }
+
+  if (!targetUsername) {
+    return res.status(400).json({ error: 'Target username is required.' });
+  }
+
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 4) {
+    return res.status(400).json({ error: 'New password must be at least 4 characters long.' });
+  }
+
+  const success = storage.resetUserPassword(targetUsername, newPassword.trim());
+  if (!success) {
+    return res.status(404).json({ error: `User '${targetUsername}' not found.` });
+  }
+
+  res.json({
+    success: true,
+    message: `Password reset successfully for @${targetUsername}.`,
+  });
+});
+
+// Dev User Management: Reset user's time restrictions & active lockout
+app.post('/api/dev/users/reset-time-restrictions', (req, res) => {
+  const { currentUsername, targetUsername } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  if (cleanCaller !== 'dev') {
+    return res.status(403).json({ error: 'Only the Main Dev user can reset time restrictions.' });
+  }
+
+  if (!targetUsername) {
+    return res.status(400).json({ error: 'Target username is required.' });
+  }
+
+  storage.resetUserTimeRestrictions(targetUsername);
+  const users = storage.getUsersManagementList();
+  const pacing = storage.checkPacing(targetUsername);
+
+  res.json({
+    success: true,
+    message: `Time restrictions and lockout reset successfully for @${targetUsername}.`,
+    pacing,
+    users,
+  });
+});
+
+// Dev AI Management: Get full AI usage configuration
+app.get('/api/dev/ai-config', (req, res) => {
+  const cleanCaller = (req.query.username as string || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(cleanCaller);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can view AI configuration.' });
+  }
+
+  const config = storage.getAIConfig();
+  res.json({ config });
+});
+
+// Dev AI Management: Update global AI usage configuration
+app.post('/api/dev/ai-config', (req, res) => {
+  const { currentUsername, updates } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(cleanCaller);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can modify AI configuration.' });
+  }
+
+  const config = storage.updateAIConfig(updates || {});
+  res.json({
+    success: true,
+    message: 'AI configuration updated successfully.',
+    config,
+  });
+});
+
+// Dev AI Management: Update specific task config (enable/disable, model, prompt)
+app.post('/api/dev/ai-config/task', (req, res) => {
+  const { currentUsername, taskId, updates } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(cleanCaller);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can modify AI task configurations.' });
+  }
+
+  if (!taskId || !['sloth_cards', 'post_mortem', 'trophy_art'].includes(taskId)) {
+    return res.status(400).json({ error: 'Invalid or missing taskId.' });
+  }
+
+  const config = storage.updateAITask(taskId as AITaskId, updates || {});
+  res.json({
+    success: true,
+    message: `Task '${taskId}' configuration updated successfully.`,
+    config,
+  });
+});
+
+// Dev AI Management: Reset task or entire AI config to defaults
+app.post('/api/dev/ai-config/reset', (req, res) => {
+  const { currentUsername, taskId } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(cleanCaller);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can reset AI configuration.' });
+  }
+
+  const config = storage.resetAITask(taskId as AITaskId | undefined);
+  res.json({
+    success: true,
+    message: taskId ? `Task '${taskId}' reset to factory defaults.` : 'All AI configurations reset to factory defaults.',
+    config,
+  });
+});
+
+// Dev AI Management: Live test an AI task with specific model/prompt
+app.post('/api/dev/ai-config/test', async (req, res) => {
+  const { currentUsername, taskId, model, prompt } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(cleanCaller);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can run AI task tests.' });
+  }
+
+  if (!taskId || !['sloth_cards', 'post_mortem', 'trophy_art'].includes(taskId)) {
+    return res.status(400).json({ error: 'Invalid or missing taskId.' });
+  }
+
+  const result = await testAITask(taskId as AITaskId, model, prompt);
+  res.json(result);
 });
 
 // Playtime heartbeat (Server-side Anti-Sloth Pacing enforcement)

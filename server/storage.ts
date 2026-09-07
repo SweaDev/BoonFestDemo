@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { DevGrantRecord, LeaderboardEntry, PlaytimeStats, RunTelemetry, Trophy, UserSession } from '../src/types';
+import { AITaskConfig, AITaskId, AIUsageConfig, DevGrantRecord, LeaderboardEntry, PlaytimeStats, RunTelemetry, Trophy, UserSession } from '../src/types';
 
 export const RESTRICTED_USERNAMES = [
   'dev',
@@ -64,6 +64,8 @@ export interface UserRecord {
   authProvider?: 'local' | 'google';
   email?: string;
   googleId?: string;
+  disabled?: boolean;
+  disabledAt?: number;
 }
 
 interface DBData {
@@ -74,7 +76,94 @@ interface DBData {
     password?: string;
     updatedAt?: number;
   };
+  aiConfig?: AIUsageConfig;
 }
+
+export const DEFAULT_AI_CONFIG: AIUsageConfig = {
+  globalEnabled: true,
+  lastUpdated: Date.now(),
+  tasks: {
+    sloth_cards: {
+      id: 'sloth_cards',
+      name: 'Deceptive Sloth Cards',
+      description: 'Generates tempting, high-risk lottery & gambling opportunity cards with disguised payouts and latent entropy spikes.',
+      enabled: true,
+      model: 'gemini-3.1-flash-lite',
+      defaultModel: 'gemini-3.1-flash-lite',
+      availableModels: ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'],
+      systemPrompt: `You are generating an obvious sloth opportunity card for the pro-social game BoonFest.
+The sloth archetype MUST be: "{archetype}".
+
+Archetype guidelines:
+- "lottery": Fancy charity or grand lotteries (e.g., "Cancer Research Charity Mega-Lottery", "Clean Oceans Gala Lottery"). The title MUST explicitly contain the word "Lottery". Description states buying a lottery ticket hoping for a massive jackpot.
+- "gambling": Fancy high-stakes casino, roulette, dice, or sportsbook gambling (e.g., "Neon Oasis VIP Casino Gambling", "Cyber-Roulette Wheel of Fortune Gambling"). The title MUST explicitly contain the word "Gambling". Description states placing a high-stakes gambling wager.
+
+RULES:
+1. The title MUST clearly and explicitly contain either "Lottery" or "Gambling". Make it unmistakable.
+2. Category MUST be "earn".
+3. Reward description must promise big gains (e.g. "Jackpot: Win up to 500 Credits!" or "High-Roller: Win up to 650 Credits!").
+4. Cost is between 15 and 35 credits.
+5. Output strict JSON matching the schema.`,
+      defaultPrompt: `You are generating an obvious sloth opportunity card for the pro-social game BoonFest.
+The sloth archetype MUST be: "{archetype}".
+
+Archetype guidelines:
+- "lottery": Fancy charity or grand lotteries (e.g., "Cancer Research Charity Mega-Lottery", "Clean Oceans Gala Lottery"). The title MUST explicitly contain the word "Lottery". Description states buying a lottery ticket hoping for a massive jackpot.
+- "gambling": Fancy high-stakes casino, roulette, dice, or sportsbook gambling (e.g., "Neon Oasis VIP Casino Gambling", "Cyber-Roulette Wheel of Fortune Gambling"). The title MUST explicitly contain the word "Gambling". Description states placing a high-stakes gambling wager.
+
+RULES:
+1. The title MUST clearly and explicitly contain either "Lottery" or "Gambling". Make it unmistakable.
+2. Category MUST be "earn".
+3. Reward description must promise big gains (e.g. "Jackpot: Win up to 500 Credits!" or "High-Roller: Win up to 650 Credits!").
+4. Cost is between 15 and 35 credits.
+5. Output strict JSON matching the schema.`,
+    },
+    post_mortem: {
+      id: 'post_mortem',
+      name: 'Psychological Post-Mortem Analysis',
+      description: 'Evaluates player run telemetry, classifies behavioral archetypes, and generates customized cognitive coaching.',
+      enabled: true,
+      model: 'gemini-3.8-flash',
+      defaultModel: 'gemini-3.8-flash',
+      availableModels: ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'],
+      systemPrompt: `Evaluate the completed session of BoonFest, an anti-sloth pro-social game.
+Telemetry data:
+{telemetry}
+
+Tasks:
+1. Provide a sharp, evocative psychological Archetype Name (e.g. "The Dopamine Speculator", "The Ascetic Philanthropist", "The Burnout Capitalist", "The Discerning Steward").
+2. Behavioral Analysis: A concise, insightful narrative analyzing their balance of capital accumulation vs self-care vs generosity vs susceptibility to shortcuts.
+3. Key strengths (2 bullet items).
+4. Vulnerabilities (2 bullet items).
+5. Strategic tips (2 to 3 actionable, targeted tips for subsequent runs).`,
+      defaultPrompt: `Evaluate the completed session of BoonFest, an anti-sloth pro-social game.
+Telemetry data:
+{telemetry}
+
+Tasks:
+1. Provide a sharp, evocative psychological Archetype Name (e.g. "The Dopamine Speculator", "The Ascetic Philanthropist", "The Burnout Capitalist", "The Discerning Steward").
+2. Behavioral Analysis: A concise, insightful narrative analyzing their balance of capital accumulation vs self-care vs generosity vs susceptibility to shortcuts.
+3. Key strengths (2 bullet items).
+4. Vulnerabilities (2 bullet items).
+5. Strategic tips (2 to 3 actionable, targeted tips for subsequent runs).`,
+    },
+    trophy_art: {
+      id: 'trophy_art',
+      name: 'Leaderboard Trophy Artifact Artwork',
+      description: 'Generates high-resolution esports trophy medal emblems for top 10 leaderboard performers.',
+      enabled: true,
+      model: 'gemini-3.1-flash-lite-image',
+      defaultModel: 'gemini-3.1-flash-lite-image',
+      availableModels: ['gemini-3.1-flash-lite-image', 'gemini-3.1-flash-image'],
+      systemPrompt: `A prestigious, flashy vector-style golden esports trophy medal emblem for game "BoonFest". 
+Rank #{rank} in Global Altruism Leaderboard. 
+Theme: Emerald green glowing laurels, polished gold star shield, geometric wings, crystal prism center, clean dark background, hyper-detailed minimalist digital badge.`,
+      defaultPrompt: `A prestigious, flashy vector-style golden esports trophy medal emblem for game "BoonFest". 
+Rank #{rank} in Global Altruism Leaderboard. 
+Theme: Emerald green glowing laurels, polished gold star shield, geometric wings, crystal prism center, clean dark background, hyper-detailed minimalist digital badge.`,
+    },
+  },
+};
 
 const DB_FILE_PATH = path.join(process.cwd(), 'data-store.json');
 
@@ -336,6 +425,20 @@ class StorageManager {
       }
     }
 
+    // Ensure AI usage configuration exists
+    if (!parsed.aiConfig) {
+      parsed.aiConfig = JSON.parse(JSON.stringify(DEFAULT_AI_CONFIG));
+    } else {
+      if (!parsed.aiConfig.tasks) {
+        parsed.aiConfig.tasks = JSON.parse(JSON.stringify(DEFAULT_AI_CONFIG.tasks));
+      }
+      for (const [key, defaultTask] of Object.entries(DEFAULT_AI_CONFIG.tasks)) {
+        if (!parsed.aiConfig.tasks[key as AITaskId]) {
+          parsed.aiConfig.tasks[key as AITaskId] = JSON.parse(JSON.stringify(defaultTask));
+        }
+      }
+    }
+
     return parsed;
   }
 
@@ -593,6 +696,104 @@ class StorageManager {
       .filter(name => (name || '').toLowerCase().trim().replace(/^@/, '') !== 'dev');
   }
 
+  // Dev User Management: Enable or Disable a user
+  public setUserDisabled(username: string, disabled: boolean): boolean {
+    const clean = (username || '').toLowerCase().trim().replace(/^@/, '');
+    if (clean === 'dev') {
+      return false; // Permanent Dev account cannot be disabled
+    }
+    const user = this.getUser(clean);
+    if (!user) return false;
+    user.disabled = disabled;
+    if (disabled) {
+      user.disabledAt = Date.now();
+    } else {
+      delete user.disabledAt;
+    }
+    this.persist();
+    return true;
+  }
+
+  // Dev User Management: Reset user password
+  public resetUserPassword(username: string, newPassword: string): boolean {
+    const clean = (username || '').toLowerCase().trim().replace(/^@/, '');
+    if (clean === 'dev') {
+      this.setDevPassword(newPassword);
+      return true;
+    }
+    const user = this.getUser(clean);
+    if (!user) return false;
+    const { hash, salt } = hashPassword(newPassword);
+    user.passwordHash = hash;
+    user.salt = salt;
+    this.persist();
+    return true;
+  }
+
+  // Dev User Management: Reset time restrictions (clears active rolling logs & explicit lockouts)
+  public resetUserTimeRestrictions(username: string): boolean {
+    const clean = (username || '').toLowerCase().trim().replace(/^@/, '');
+    const user = this.getUser(clean);
+    if (user) {
+      delete user.lockoutUntil;
+      delete user.lockoutReason;
+    }
+
+    if (clean === 'guest') {
+      delete this.data.playtimeLogs['Guest'];
+      delete this.data.playtimeLogs['guest'];
+    } else {
+      delete this.data.playtimeLogs[clean];
+      if (user && user.username) {
+        delete this.data.playtimeLogs[user.username];
+      }
+    }
+
+    this.persist();
+    return true;
+  }
+
+  // Dev User Management: Get list of all users with status, pacing, and statistics
+  public getUsersManagementList(): Array<{
+    username: string;
+    createdAt: number;
+    authProvider?: string;
+    disabled: boolean;
+    disabledAt?: number;
+    runsCount: number;
+    trophiesCount: number;
+    isDev: boolean;
+    isMainDev: boolean;
+    isTemporaryDev: boolean;
+    pacing: PlaytimeStats;
+  }> {
+    const usersList = Object.values(this.data.users);
+    return usersList.map(user => {
+      const clean = (user.username || '').toLowerCase().trim().replace(/^@/, '');
+      const pacing = this.checkPacing(user.username);
+      const devInfo = this.isUserDev(clean);
+      return {
+        username: user.username,
+        createdAt: user.createdAt || Date.now(),
+        authProvider: user.authProvider || 'local',
+        disabled: Boolean(user.disabled),
+        disabledAt: user.disabledAt,
+        runsCount: user.runsCount || 0,
+        trophiesCount: (user.trophies || []).length,
+        isDev: devInfo.isDev,
+        isMainDev: devInfo.isMainDev,
+        isTemporaryDev: devInfo.isTemporaryDev,
+        pacing,
+      };
+    }).sort((a, b) => {
+      if (a.username.toLowerCase() === 'dev') return -1;
+      if (b.username.toLowerCase() === 'dev') return 1;
+      if (a.username.toLowerCase() === 'guest') return -1;
+      if (b.username.toLowerCase() === 'guest') return 1;
+      return a.username.localeCompare(b.username);
+    });
+  }
+
   // Anti-Sloth Pacing Engine:
   // - 30-Minute Rolling Rule: Max 5 cumulative minutes (300s) active play. Once reached, locks for 25 continuous minutes.
   // - 24-Hour Daily Cap: Max 25 cumulative minutes (1500s) active play in rolling 24h.
@@ -753,6 +954,66 @@ class StorageManager {
     const pacing = this.checkPacing(storeKey);
     this.persist();
     return pacing;
+  }
+
+  public getAIConfig(): AIUsageConfig {
+    if (!this.data.aiConfig) {
+      this.data.aiConfig = JSON.parse(JSON.stringify(DEFAULT_AI_CONFIG));
+      this.persist();
+    }
+    return this.data.aiConfig;
+  }
+
+  public updateAIConfig(updates: Partial<AIUsageConfig>): AIUsageConfig {
+    if (!this.data.aiConfig) {
+      this.data.aiConfig = JSON.parse(JSON.stringify(DEFAULT_AI_CONFIG));
+    }
+    if (typeof updates.globalEnabled === 'boolean') {
+      this.data.aiConfig.globalEnabled = updates.globalEnabled;
+    }
+    if (updates.tasks) {
+      for (const [taskId, taskUpdates] of Object.entries(updates.tasks)) {
+        const key = taskId as AITaskId;
+        if (this.data.aiConfig.tasks[key]) {
+          this.data.aiConfig.tasks[key] = {
+            ...this.data.aiConfig.tasks[key],
+            ...taskUpdates,
+          };
+        }
+      }
+    }
+    this.data.aiConfig.lastUpdated = Date.now();
+    this.persist();
+    return this.data.aiConfig;
+  }
+
+  public updateAITask(taskId: AITaskId, updates: Partial<AITaskConfig>): AIUsageConfig {
+    if (!this.data.aiConfig) {
+      this.data.aiConfig = JSON.parse(JSON.stringify(DEFAULT_AI_CONFIG));
+    }
+    if (this.data.aiConfig.tasks[taskId]) {
+      this.data.aiConfig.tasks[taskId] = {
+        ...this.data.aiConfig.tasks[taskId],
+        ...updates,
+      };
+      this.data.aiConfig.lastUpdated = Date.now();
+      this.persist();
+    }
+    return this.data.aiConfig;
+  }
+
+  public resetAITask(taskId?: AITaskId): AIUsageConfig {
+    if (!this.data.aiConfig) {
+      this.data.aiConfig = JSON.parse(JSON.stringify(DEFAULT_AI_CONFIG));
+    }
+    if (taskId && DEFAULT_AI_CONFIG.tasks[taskId]) {
+      this.data.aiConfig.tasks[taskId] = JSON.parse(JSON.stringify(DEFAULT_AI_CONFIG.tasks[taskId]));
+    } else {
+      this.data.aiConfig = JSON.parse(JSON.stringify(DEFAULT_AI_CONFIG));
+    }
+    this.data.aiConfig.lastUpdated = Date.now();
+    this.persist();
+    return this.data.aiConfig;
   }
 }
 

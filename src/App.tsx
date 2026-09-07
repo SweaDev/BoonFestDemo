@@ -113,10 +113,18 @@ export default function App() {
         setPlaytimeStats(data.pacing);
 
         if (data.gameState) {
+          if (data.gameState.isGameOver || (data.gameState.hue !== undefined && data.gameState.hue <= 0)) {
+            // Auto start a fresh playable run if previously concluded
+            handleStartNewRun();
+            return;
+          }
+
           setCredits(data.gameState.credits);
           setBoonPoints(data.gameState.boonPoints);
           setAttributes(data.gameState.attributes);
-          setHue(data.gameState.hue);
+          setHue(typeof data.gameState.hue === 'number' && data.gameState.hue > 0 ? data.gameState.hue : 95);
+          setIsGameOver(false);
+          setGameOverData(null);
           setActivePhantoms(data.gameState.activePhantoms || []);
           setRedAlertSecondsRemaining(data.gameState.redAlertSecondsRemaining ?? 8.0);
           if (data.gameState.entropyDecayRate !== undefined) setDecayRate(data.gameState.entropyDecayRate);
@@ -300,6 +308,23 @@ export default function App() {
         }
       } else {
         const err = await res.json();
+        if (err.newRunStarted && err.newGameState) {
+          setCredits(err.newGameState.credits);
+          setBoonPoints(err.newGameState.boonPoints);
+          setAttributes(err.newGameState.attributes);
+          setHue(err.newGameState.hue ?? 95);
+          setActiveCards(err.newGameState.activeCards);
+          setActivePhantoms([]);
+          setIsGameOver(false);
+          setGameOverData(null);
+          setFocusedIndex(0);
+          addToast('info', 'Starting a fresh game at 95° equilibrium. Choose your action!');
+          return;
+        }
+        if (err.error === 'Game is already over.') {
+          handleStartNewRun();
+          return;
+        }
         if (err.activeCards && err.activeCards.length > 0) {
           setActiveCards(err.activeCards);
           setFocusedIndex(0);
@@ -590,7 +615,7 @@ export default function App() {
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3 h-3 text-[#ffb800]" />
             <span>
-              Pro-Social Tip: Discern genuine mutual aid from predatory get-rich traps and substance shortcuts.
+              Pro-Social Tip: Discern genuine mutual aid from predatory lotteries and high-risk gambling lures.
             </span>
           </div>
 

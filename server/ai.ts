@@ -42,126 +42,122 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Fallback curated Sloth traps if AI is unavailable or rate-limited
+// Limited strictly to obvious Lottery and Gambling opportunities
 const CURATED_SLOTH_TEMPLATES = [
-  {
-    archetype: 'gambling' as SlothArchetype,
-    disguisedCategory: 'earn' as const,
-    title: 'Midnight Liquidity Leverage Pool',
-    description: 'Stake small collateral into an anonymous high-frequency algorithmic staking pool with guaranteed 6x returns.',
-    flavor: 'Instant liquidity without cumbersome ethical audits.',
-    cost: 25,
-    rewardDescription: '+350 Fast Credits',
-    iconName: 'Coins',
-    phantomCredits: 350,
-    phantomDurationSec: 7,
-    entropySpike: 24,
-    entropyRateMultiplier: 1.35,
-    attributeDrop: { pillar: 'mind' as const, amount: 1 },
-  },
+  // 1. Lotteries (Fancy charity / grand names, obvious lottery, high promises, consumes credits)
   {
     archetype: 'lottery' as SlothArchetype,
     disguisedCategory: 'earn' as const,
-    title: 'Golden Jubilee Mega-Raffle Slip',
-    description: 'Purchase an ultra-rare syndicate ticket for the upcoming planetary wealth redistribution jackpot.',
-    flavor: 'Why labor for incremental gains when fate can crown you right now?',
-    cost: 15,
-    rewardDescription: '+480 Jackpot Credits',
-    iconName: 'Sparkles',
-    phantomCredits: 480,
-    phantomDurationSec: 8,
-    entropySpike: 28,
-    entropyRateMultiplier: 1.4,
-    attributeDrop: { pillar: 'spirit' as const, amount: 1 },
-  },
-  {
-    archetype: 'substance' as SlothArchetype,
-    disguisedCategory: 'grow' as const,
-    title: 'Hyper-Focus Neuro-Stimulant Ampoule',
-    description: 'Inhale an unregulated synthetic peptide inhaler that guarantees infinite alertness and immediate clarity.',
-    flavor: 'Bypass months of somatic recovery with pure neurochemistry.',
+    title: 'Cancer Research Charity Mega-Lottery',
+    description: 'Purchase an official charity lottery ticket. Advertises a grand 500-credit prize ostensibly supporting oncology research. Lotteries rarely pay (<10% chance), and lost capital increases societal entropy.',
+    flavor: 'A noble cause and a one-in-a-million chance at instant untold wealth.',
     cost: 20,
-    rewardDescription: '+2 Mind & Instant Energy Surge',
-    iconName: 'Zap',
-    phantomCredits: 200,
-    phantomDurationSec: 6,
-    entropySpike: 32,
-    entropyRateMultiplier: 1.45,
-    attributeDrop: { pillar: 'body' as const, amount: 1 },
-  },
-  {
-    archetype: 'gambling' as SlothArchetype,
-    disguisedCategory: 'earn' as const,
-    title: 'Back-Alley High-Roller Dice Ring',
-    description: 'Slip past the security drone into a private parlor. Double your buy-in on a single throw of loaded bone dice.',
-    flavor: 'Fortune favors the reckless. Step right in.',
-    cost: 30,
-    rewardDescription: '+300 Credits on the Roll',
-    iconName: 'Dices',
-    phantomCredits: 300,
-    phantomDurationSec: 7,
-    entropySpike: 22,
-    entropyRateMultiplier: 1.3,
-    attributeDrop: { pillar: 'spirit' as const, amount: 1 },
-  },
-  {
-    archetype: 'substance' as SlothArchetype,
-    disguisedCategory: 'grow' as const,
-    title: 'VIP Velvet Lounge Spree',
-    description: 'Drown your fatigue in top-shelf botanical distillates and intoxicating Euphoria smoke with elite companions.',
-    flavor: 'Forget about systemic decay—celebrate today like there is no tomorrow.',
-    cost: 35,
-    rewardDescription: '+250 Social Credits & Euphoria',
-    iconName: 'Wine',
-    phantomCredits: 250,
-    phantomDurationSec: 8,
-    entropySpike: 30,
-    entropyRateMultiplier: 1.4,
-    attributeDrop: { pillar: 'body' as const, amount: 1 },
-  },
-  {
-    archetype: 'gambling' as SlothArchetype,
-    disguisedCategory: 'earn' as const,
-    title: 'Algorithmic Flash Arbitrage Vault',
-    description: 'Route short-term liquidity through a proprietary flash-loan loop skimming micro-fractions from civic energy trades.',
-    flavor: 'Risk-free delta-neutral yield is a mathematical certainty.',
-    cost: 30,
-    rewardDescription: '+420 Arbitrage Yield',
-    iconName: 'Coins',
-    phantomCredits: 420,
-    phantomDurationSec: 7,
-    entropySpike: 26,
-    entropyRateMultiplier: 1.35,
-    attributeDrop: { pillar: 'mind' as const, amount: 1 },
+    rewardDescription: 'Jackpot: Win up to 500 Credits!',
+    iconName: 'Sparkles',
+    phantomCredits: 0,
+    phantomDurationSec: 0,
+    entropySpike: 16,
+    entropyRateMultiplier: 1.18,
   },
   {
     archetype: 'lottery' as SlothArchetype,
     disguisedCategory: 'earn' as const,
-    title: 'Syndicate Stellar Scratch Card',
-    description: 'Scratch holographic silver foils for an instant tier-one civic grant voucher guaranteed by off-grid private sponsors.',
-    flavor: 'One flick of the coin could change your destiny forever.',
-    cost: 10,
-    rewardDescription: '+320 Instant Prize Credits',
+    title: "Children's Hospital Hope Grand Lottery",
+    description: 'Buy into the pediatric foundation charity lottery ticket draw promising an enormous jackpot payout. Rarely pays (<10% chance in small amounts); squandered money increases entropy.',
+    flavor: 'Why toil when benevolence could be rewarded with instant fortune?',
+    cost: 15,
+    rewardDescription: 'Jackpot: Win up to 450 Credits!',
     iconName: 'Sparkles',
-    phantomCredits: 320,
-    phantomDurationSec: 6,
-    entropySpike: 20,
-    entropyRateMultiplier: 1.3,
-    attributeDrop: { pillar: 'spirit' as const, amount: 1 },
+    phantomCredits: 0,
+    phantomDurationSec: 0,
+    entropySpike: 16,
+    entropyRateMultiplier: 1.18,
   },
   {
-    archetype: 'substance' as SlothArchetype,
-    disguisedCategory: 'grow' as const,
-    title: 'Quantum Dopamine Micro-Mist',
-    description: 'Administer an ultrasonic sublingual mist that saturates sensory receptors and shuts off existential anxiety.',
-    flavor: 'Pure serene bliss at the touch of a dispenser nozzle.',
+    archetype: 'lottery' as SlothArchetype,
+    disguisedCategory: 'earn' as const,
+    title: 'Planetary Wildlife Preservation Lottery',
+    description: 'Enter the global biosphere conservation lottery drawing with a glittering top capital jackpot. Rarely pays, and lost capital directly spikes world entropy.',
+    flavor: 'Save the species and secure your financial freedom on a single ticket.',
     cost: 25,
-    rewardDescription: '+3 Spirit & Euphoric Focus',
-    iconName: 'Flame',
-    phantomCredits: 280,
-    phantomDurationSec: 7,
+    rewardDescription: 'Jackpot: Win up to 600 Credits!',
+    iconName: 'Sparkles',
+    phantomCredits: 0,
+    phantomDurationSec: 0,
+    entropySpike: 16,
+    entropyRateMultiplier: 1.18,
+  },
+  {
+    archetype: 'lottery' as SlothArchetype,
+    disguisedCategory: 'earn' as const,
+    title: 'Clean Oceans Gala Super-Lottery',
+    description: 'Purchase a ticket for the oceanic restoration charity sweepstakes advertising an astronomical capital bounty. Seldom pays; lost funds increase societal entropy.',
+    flavor: 'The seas need help, and you deserve a fast fortune.',
+    cost: 20,
+    rewardDescription: 'Jackpot: Win up to 520 Credits!',
+    iconName: 'Sparkles',
+    phantomCredits: 0,
+    phantomDurationSec: 0,
+    entropySpike: 16,
+    entropyRateMultiplier: 1.18,
+  },
+
+  // 2. Gambling (Fancy high-stakes names, obvious gambling, consumes credits, heavy entropy)
+  {
+    archetype: 'gambling' as SlothArchetype,
+    disguisedCategory: 'earn' as const,
+    title: 'Neon Oasis VIP Casino Gambling',
+    description: 'Step onto the glittering casino floor and place high-stakes bets on the private VIP tables. Gambling seldom pays and only in small amounts, spiking far more entropy than lottery.',
+    flavor: 'The house offers instant glory to those daring enough to roll.',
+    cost: 30,
+    rewardDescription: 'High-Roller: Win up to 650 Credits!',
+    iconName: 'Dices',
+    phantomCredits: 0,
+    phantomDurationSec: 0,
     entropySpike: 28,
-    entropyRateMultiplier: 1.4,
-    attributeDrop: { pillar: 'body' as const, amount: 1 },
+    entropyRateMultiplier: 1.35,
+  },
+  {
+    archetype: 'gambling' as SlothArchetype,
+    disguisedCategory: 'earn' as const,
+    title: 'Cyber-Roulette Wheel of Fortune Gambling',
+    description: 'Gamble your capital on the spinning quantum roulette wheel promising massive multiplied returns. High-risk gambling seldom pays, and losses accelerate entropy collapse rapidly.',
+    flavor: 'Put everything on red and let the wheel decide your economic fate.',
+    cost: 25,
+    rewardDescription: '35:1 Payout: Win up to 700 Credits!',
+    iconName: 'Dices',
+    phantomCredits: 0,
+    phantomDurationSec: 0,
+    entropySpike: 28,
+    entropyRateMultiplier: 1.35,
+  },
+  {
+    archetype: 'gambling' as SlothArchetype,
+    disguisedCategory: 'earn' as const,
+    title: 'Underground High-Roller Dice Gambling',
+    description: 'Wager in the back-alley dragon dice pit where fortunes allegedly flip on every roll of the loaded bones. Seldom pays, driving steep entropy spikes across society.',
+    flavor: 'Double down. Fortune favors the bold, or so they claim.',
+    cost: 35,
+    rewardDescription: 'High-Stakes: Win up to 800 Credits!',
+    iconName: 'Dices',
+    phantomCredits: 0,
+    phantomDurationSec: 0,
+    entropySpike: 28,
+    entropyRateMultiplier: 1.35,
+  },
+  {
+    archetype: 'gambling' as SlothArchetype,
+    disguisedCategory: 'earn' as const,
+    title: 'Metropolitan Derby Thoroughbred Sportsbook Gambling',
+    description: 'Place high-risk parlay gambling wagers on the cyber-thoroughbred racing circuit for an advertised multi-fold payout. Seldom pays, consuming capital and fueling entropy.',
+    flavor: 'The odds are tempting, and the finish line is seconds away.',
+    cost: 30,
+    rewardDescription: 'Trifecta: Win up to 600 Credits!',
+    iconName: 'Dices',
+    phantomCredits: 0,
+    phantomDurationSec: 0,
+    entropySpike: 28,
+    entropyRateMultiplier: 1.35,
   },
 ];
 
@@ -178,7 +174,7 @@ export async function refillSlothBuffer() {
     const ai = getAI();
     if (!ai) return;
 
-    const archetypes: SlothArchetype[] = ['gambling', 'lottery', 'substance'];
+    const archetypes: SlothArchetype[] = ['lottery', 'gambling'];
     const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
     const cardId = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
@@ -189,35 +185,33 @@ export async function refillSlothBuffer() {
         const response = await withTimeout(
           ai.models.generateContent({
             model,
-            contents: `You are generating a deceptive trap card for the pro-social game BoonFest.
-The trap archetype is: "${chosenArchetype}".
-Archetype guidelines:
-- "gambling": Shady dice games, back-alley bets, predatory crypto/leverage schemes promising instant credit multiplication.
-- "lottery": Flashy tickets with small entry fees advertising massive jackpots.
-- "substance": Illicit street narcotics, designer stimulants, VIP lounge sprees framed as quick energy fixes or social shortcuts.
+            contents: `You are generating an obvious sloth opportunity card for the pro-social game BoonFest.
+The sloth archetype MUST be: "${chosenArchetype}".
 
-CRITICAL DECEPTION RULES:
-1. The card MUST NEVER mention the word "Sloth", "trap", "danger", or "penalty".
-2. It MUST appear disguised as a legitimate high-reward "earn" (credit generator) or "grow" (attribute booster) card.
-3. Seductive copywriting: tantalizing, enticing, believable, promising immediate gains.
-4. Output strict JSON matching the schema.`,
+Archetype guidelines:
+- "lottery": Fancy charity or grand lotteries (e.g., "Cancer Research Charity Mega-Lottery", "Clean Oceans Gala Lottery"). The title MUST explicitly contain the word "Lottery". Description states buying a lottery ticket hoping for a massive jackpot.
+- "gambling": Fancy high-stakes casino, roulette, dice, or sportsbook gambling (e.g., "Neon Oasis VIP Casino Gambling", "Cyber-Roulette Wheel of Fortune Gambling"). The title MUST explicitly contain the word "Gambling". Description states placing a high-stakes gambling wager.
+
+RULES:
+1. The title MUST clearly and explicitly contain either "Lottery" or "Gambling". Make it unmistakable.
+2. Category MUST be "earn".
+3. Reward description must promise big gains (e.g. "Jackpot: Win up to 500 Credits!" or "High-Roller: Win up to 650 Credits!").
+4. Cost is between 15 and 35 credits.
+5. Output strict JSON matching the schema.`,
             config: {
               responseMimeType: 'application/json',
               responseSchema: {
                 type: Type.OBJECT,
                 properties: {
-                  title: { type: Type.STRING, description: 'Compelling title, e.g. "Anonymous High-Roller Syndicate"' },
-                  category: { type: Type.STRING, description: 'Must be "earn" or "grow"' },
-                  description: { type: Type.STRING, description: 'Enticing description of the activity' },
-                  flavor: { type: Type.STRING, description: 'Seductive one-liner justifying the easy shortcut' },
-                  cost: { type: Type.NUMBER, description: 'Buy-in cost, between 15 and 45 credits' },
-                  rewardDescription: { type: Type.STRING, description: 'Display reward, e.g. "+380 Credits" or "+2 Mind & Fast Payout"' },
-                  iconName: { type: Type.STRING, description: 'One of: Coins, Sparkles, Zap, Flame, Dices, Award' },
-                  phantomCredits: { type: Type.NUMBER, description: 'Phantom credit surge amount between 220 and 450' },
-                  entropySpike: { type: Type.NUMBER, description: 'Entropy spike degrees between 18 and 32' },
-                  penaltyPillar: { type: Type.STRING, description: 'One of "mind", "body", "spirit"' },
+                  title: { type: Type.STRING, description: 'Title explicitly containing Lottery or Gambling' },
+                  category: { type: Type.STRING, description: 'Must be "earn"' },
+                  description: { type: Type.STRING, description: 'Description of the lottery or gambling opportunity' },
+                  flavor: { type: Type.STRING, description: 'Seductive one-liner justifying the lottery or gamble' },
+                  cost: { type: Type.NUMBER, description: 'Buy-in cost, between 15 and 35 credits' },
+                  rewardDescription: { type: Type.STRING, description: 'Promised big gain, e.g. "Jackpot: Win up to 500 Credits!"' },
+                  iconName: { type: Type.STRING, description: 'One of: Sparkles, Dices, Coins' },
                 },
-                required: ['title', 'category', 'description', 'flavor', 'cost', 'rewardDescription', 'iconName', 'phantomCredits', 'entropySpike', 'penaltyPillar'],
+                required: ['title', 'category', 'description', 'flavor', 'cost', 'rewardDescription', 'iconName'],
               },
             },
           }),
@@ -229,28 +223,27 @@ CRITICAL DECEPTION RULES:
         if (cleaned) {
           const parsed = JSON.parse(cleaned);
           if (parsed.title && parsed.cost) {
-            const pillar = (['mind', 'body', 'spirit'].includes(parsed.penaltyPillar) ? parsed.penaltyPillar : 'mind') as 'mind' | 'body' | 'spirit';
+            const isLottery = chosenArchetype === 'lottery';
             const card: CardPayload = {
               id: cardId,
               title: parsed.title,
-              category: parsed.category === 'grow' ? 'grow' : 'earn',
+              category: 'earn',
               tier: 2,
-              cost: Math.max(10, Math.min(60, Number(parsed.cost) || 25)),
-              rewardDescription: parsed.rewardDescription || `+${parsed.phantomCredits || 300} Credits`,
+              cost: Math.max(15, Math.min(40, Number(parsed.cost) || (isLottery ? 20 : 30))),
+              rewardDescription: parsed.rewardDescription || (isLottery ? 'Jackpot: Win up to 500 Credits!' : 'High-Roller: Win up to 650 Credits!'),
               description: parsed.description,
               flavor: parsed.flavor,
-              iconName: parsed.iconName || 'Coins',
+              iconName: isLottery ? 'Sparkles' : 'Dices',
             };
 
             const hidden: HiddenSlothData = {
               isSloth: true,
               penalty: {
                 archetype: chosenArchetype,
-                entropySpike: Math.max(15, Math.min(35, Number(parsed.entropySpike) || 25)),
-                entropyRateMultiplier: 1.35,
-                attributeDrop: { pillar, amount: 1 },
-                phantomCredits: Math.max(180, Math.min(500, Number(parsed.phantomCredits) || 320)),
-                phantomDurationSec: Math.floor(Math.random() * 3) + 6,
+                entropySpike: isLottery ? 16 : 28,
+                entropyRateMultiplier: isLottery ? 1.18 : 1.35,
+                phantomCredits: 0,
+                phantomDurationSec: 0,
                 initialCreditsGiven: 0,
               },
             };
@@ -288,7 +281,7 @@ export function getInstantSlothCard(playerCredits: number, mind: number): {
   }
 
   // Instant curated procedural card
-  const archetypes: SlothArchetype[] = ['gambling', 'lottery', 'substance'];
+  const archetypes: SlothArchetype[] = ['lottery', 'gambling'];
   const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
   const matching = CURATED_SLOTH_TEMPLATES.filter(t => t.archetype === chosenArchetype);
   const template = matching.length > 0 ? matching[Math.floor(Math.random() * matching.length)] : CURATED_SLOTH_TEMPLATES[0];
@@ -312,9 +305,8 @@ export function getInstantSlothCard(playerCredits: number, mind: number): {
       archetype: template.archetype,
       entropySpike: template.entropySpike,
       entropyRateMultiplier: template.entropyRateMultiplier,
-      attributeDrop: template.attributeDrop,
-      phantomCredits: template.phantomCredits,
-      phantomDurationSec: template.phantomDurationSec,
+      phantomCredits: 0,
+      phantomDurationSec: 0,
       initialCreditsGiven: 0,
     },
   };
@@ -322,11 +314,11 @@ export function getInstantSlothCard(playerCredits: number, mind: number): {
   return { card, hidden };
 }
 
-// Backward compatibility: export generateDynamicSlothCard as an instant resolver
-export async function generateDynamicSlothCard(playerCredits: number, mind: number): Promise<{
+// Export generateDynamicSlothCard as an instant synchronous resolver
+export function generateDynamicSlothCard(playerCredits: number, mind: number): {
   card: CardPayload;
   hidden: HiddenSlothData;
-}> {
+} {
   return getInstantSlothCard(playerCredits, mind);
 }
 

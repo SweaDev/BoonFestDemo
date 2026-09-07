@@ -4,7 +4,7 @@ dotenv.config();
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { generateAIPostMortem, generateDynamicSlothCard, generateTrophyArtifact } from './server/ai';
+import { generateAIPostMortem, generateDynamicSlothCard, getInstantSlothCard, generateTrophyArtifact } from './server/ai';
 import { BASE_BOON_CARDS, BASE_EARN_CARDS, BASE_GROW_CARDS } from './server/data/cardPool';
 import { storage } from './server/storage';
 import {
@@ -115,10 +115,8 @@ function drawHandForSession(session: GameSessionState): CardPayload[] {
   // Filter Boon cards
   const boonSample = BASE_BOON_CARDS.sort(() => 0.5 - Math.random()).slice(0, 2);
 
-  // Instant deceptive Sloth card (with background generative buffer refill)
-  const { card: slothCard, hidden: slothHidden } = generateDynamicSlothCard
-    ? (generateDynamicSlothCard as any)(credits, attributes.mind)
-    : { card: null, hidden: null };
+  // Guaranteed deceptive Sloth card (Lottery or Gambling) in every hand, disguised with category 'earn'
+  const { card: slothCard, hidden: slothHidden } = getInstantSlothCard(credits, attributes.mind);
 
   if (slothCard && slothHidden) {
     session.hiddenCards[slothCard.id] = slothHidden;
@@ -153,7 +151,7 @@ app.get('/api/session', (req, res) => {
     isGuest = false;
   }
 
-  if (!sessionId || !activeSessions[sessionId]) {
+  if (!sessionId || !activeSessions[sessionId] || activeSessions[sessionId].isGameOver || activeSessions[sessionId].hue <= 0) {
     sessionId = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     createNewGameSession(sessionId, username, isGuest);
   }
@@ -171,9 +169,9 @@ app.get('/api/session', (req, res) => {
       credits: session.credits,
       boonPoints: session.boonPoints,
       attributes: session.attributes,
-      hue: session.hue,
+      hue: session.hue > 0 ? session.hue : 95,
       activeCards: session.activeCards,
-      isGameOver: session.isGameOver,
+      isGameOver: false,
       isPaused: session.isPaused,
       redAlertSecondsRemaining: session.redAlertSecondsRemaining,
       entropyDecayRate: session.entropyDecayRate,
@@ -414,14 +412,6 @@ app.post('/api/game/new', async (req, res) => {
   const previousSession = sessionId ? activeSessions[sessionId] : null;
   const gameCount = previousSession ? previousSession.gameCount + 1 : 1;
 
-  // If user is guest and already finished their first game, they MUST register
-  if (isGuest && gameCount > 1) {
-    return res.status(403).json({
-      error: 'Guest session expired. Please create a unique username to continue your altruistic journey.',
-      requiresRegistration: true,
-    });
-  }
-
   const targetSessionId = sessionId || `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const session = createNewGameSession(targetSessionId, cleanUser, isGuest, gameCount);
 
@@ -452,7 +442,7 @@ app.post('/api/game/new', async (req, res) => {
 app.get('/api/cards/draw', (req, res) => {
   const sessionId = req.query.sessionId as string;
   let session = sessionId ? activeSessions[sessionId] : null;
-  if (!session) {
+  if (!session || session.isGameOver || session.hue <= 0) {
     const fallbackId = sessionId || `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     session = createNewGameSession(fallbackId, 'Guest', true);
   }
@@ -465,14 +455,25 @@ app.get('/api/cards/draw', (req, res) => {
 app.post('/api/cards/execute', async (req, res) => {
   const { sessionId, cardId } = req.body;
   let session = sessionId ? activeSessions[sessionId] : null;
-  if (!session) {
-    // Auto-heal session if server restarted or session was wiped
+  if (!session || session.isGameOver || session.hue <= 0) {
+    // Auto-heal session if server restarted or session was over
     const fallbackId = sessionId || `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    session = createNewGameSession(fallbackId, 'Guest', true);
-  }
-
-  if (session.isGameOver) {
-    return res.status(400).json({ error: 'Game is already over.' });
+    session = createNewGameSession(fallbackId, session ? session.username : 'Guest', session ? session.isGuest : true);
+    return res.status(400).json({
+      error: 'Previous run concluded. A fresh game has been initialized with 95° equilibrium!',
+      newRunStarted: true,
+      newGameState: {
+        credits: session.credits,
+        boonPoints: session.boonPoints,
+        attributes: session.attributes,
+        hue: session.hue,
+        activeCards: session.activeCards,
+        activePhantoms: [],
+        entropyDecayRate: session.entropyDecayRate,
+        effectiveDecayRate: session.effectiveDecayRate,
+        paceMultiplier: session.paceMultiplier,
+      },
+    });
   }
 
   let card = session.activeCards.find(c => c.id === cardId);
@@ -517,41 +518,63 @@ app.post('/api/cards/execute', async (req, res) => {
 
   if (hiddenData && hiddenData.isSloth && hiddenData.penalty) {
     const { penalty } = hiddenData;
+    const isLottery = penalty.archetype === 'lottery';
     session.slothTrapsTriggered.push(penalty.archetype);
 
-    // Initial illusory payout / phantom surge
-    const phantomAmount = penalty.phantomCredits || 300;
-    const phantomDuration = penalty.phantomDurationSec || 7;
+    // In BoonFest:
+    // 1. Lottery/Gambling pays less than 10% of the time (<10%), and ONLY ever pays in small amounts.
+    // 2. Lottery that doesn't earn you anything increases entropy (because collective wealth was squandered instead of doing good deeds).
+    // 3. Gambling seldom pays and in small amounts, and increases MORE entropy than lottery.
+    const pays = Math.random() < 0.08; // strictly less than 10% win chance
+    let payout = 0;
+    let entropySpike = 0;
+    let message = '';
 
-    session.credits += phantomAmount;
-    session.activePhantoms.push({
-      id: `phantom_${Date.now()}`,
-      amount: phantomAmount,
-      expiresAt: now + phantomDuration * 1000,
-      sourceTitle: card.title,
-    });
-
-    // Hidden Sloth Penalties:
-    // 1. Entropy acceleration
-    session.slothRateMultiplier = Math.min(3.0, (session.slothRateMultiplier || 1.0) * penalty.entropyRateMultiplier);
-    const { effectiveDecayRate: slothEffectiveRate, paceMultiplier: slothPace } = updateSessionDecayRate(session);
-    // 2. Entropy immediate red spike
-    session.hue = Math.max(0, session.hue - penalty.entropySpike);
-    // 3. Attribute degradation
-    if (penalty.attributeDrop) {
-      const { pillar, amount } = penalty.attributeDrop;
-      session.attributes[pillar] = Math.max(1, session.attributes[pillar] - amount);
-      updateSessionDecayRate(session);
+    if (isLottery) {
+      if (pays) {
+        // Pays only in small amounts (small consolation win)
+        payout = card.cost + Math.floor(Math.random() * 8) + 4;
+        session.credits += payout;
+        entropySpike = 4;
+        session.hue = Math.max(0, session.hue - entropySpike);
+        message = `Lottery Result: Minor Prize! You won ${payout} credits on ${card.title}. The promised jackpot was an illusion, but you salvaged a small return.`;
+      } else {
+        // Lottery loss: squandered capital drives systemic entropy up
+        payout = 0;
+        entropySpike = 16;
+        session.hue = Math.max(0, session.hue - entropySpike);
+        session.slothRateMultiplier = Math.min(3.0, (session.slothRateMultiplier || 1.0) * 1.18);
+        message = `Lottery Result: No Win on ${card.title}! Lost ${card.cost} credits. Because millions of hopeful citizens squandered collective wealth instead of funding good deeds, societal entropy spiked by ${entropySpike}°!`;
+      }
+    } else {
+      // Gambling: increases MORE entropy than lottery
+      if (pays) {
+        // Pays only in small amounts
+        payout = card.cost + Math.floor(Math.random() * 12) + 6;
+        session.credits += payout;
+        entropySpike = 8;
+        session.hue = Math.max(0, session.hue - entropySpike);
+        session.slothRateMultiplier = Math.min(3.0, (session.slothRateMultiplier || 1.0) * 1.12);
+        message = `Gambling Result: Modest Payout! The house granted a small win of ${payout} credits on ${card.title}. Far below the advertised fortune, and speculative fever subtly degraded social discipline.`;
+      } else {
+        // Gambling loss: heavy entropy spike (greater than lottery)
+        payout = 0;
+        entropySpike = 28; // Higher entropy spike than lottery (28° vs 16°)
+        session.hue = Math.max(0, session.hue - entropySpike);
+        session.slothRateMultiplier = Math.min(3.5, (session.slothRateMultiplier || 1.0) * 1.35);
+        message = `Gambling Result: The House Wins! You lost ${card.cost} credits on ${card.title}. Reckless gambling burned capital, eroded communal trust, and drove a severe systemic entropy collapse of ${entropySpike}°!`;
+      }
     }
+
+    const { effectiveDecayRate: slothEffectiveRate, paceMultiplier: slothPace } = updateSessionDecayRate(session);
 
     executeResult = {
       success: true,
       type: 'sloth_trap',
-      message: `Surge received: +${phantomAmount} credits! But an ominous crimson haze grips your conscience...`,
-      creditsDelta: phantomAmount - card.cost,
+      message,
+      creditsDelta: payout - card.cost,
       boonPointsDelta: 0,
-      attributeChanges: penalty.attributeDrop ? { [penalty.attributeDrop.pillar]: session.attributes[penalty.attributeDrop.pillar] } : undefined,
-      hueDelta: -penalty.entropySpike,
+      hueDelta: -entropySpike,
       newGameState: {
         credits: session.credits,
         boonPoints: session.boonPoints,

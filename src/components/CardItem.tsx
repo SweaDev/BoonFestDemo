@@ -89,7 +89,10 @@ export const CardItem: React.FC<CardItemProps> = ({
   const canAfford = playerCredits >= card.cost;
   const isExecutable = hasPrereqs && canAfford;
 
-  // Visual archetype styling based on category
+  const isLottery = card.title.toLowerCase().includes('lottery') || card.description.toLowerCase().includes('lottery');
+  const isGambling = card.title.toLowerCase().includes('gambling') || card.description.toLowerCase().includes('gambling');
+
+  // Visual archetype styling based on category & sloth type
   let categoryTheme = {
     badge: 'bg-[#ffb800]/10 text-[#ffb800] border-[#ffb800]/30',
     border: 'border-[#22242a] hover:border-[#ffb800]/50',
@@ -98,7 +101,23 @@ export const CardItem: React.FC<CardItemProps> = ({
     pill: 'Earn • Capital',
   };
 
-  if (card.category === 'grow') {
+  if (isLottery) {
+    categoryTheme = {
+      badge: 'bg-[#ffb800]/15 text-[#ffb800] border-[#ffb800]/40',
+      border: 'border-[#ffb800]/30 hover:border-[#ffb800]/60',
+      iconBg: 'bg-[#ffb800]/15 text-[#ffb800] border-[#ffb800]/30',
+      accent: 'text-[#ffb800]',
+      pill: 'Earn • Lottery',
+    };
+  } else if (isGambling) {
+    categoryTheme = {
+      badge: 'bg-[#ffb800]/15 text-[#ffb800] border-[#ffb800]/40',
+      border: 'border-[#ffb800]/30 hover:border-[#ffb800]/60',
+      iconBg: 'bg-[#ffb800]/15 text-[#ffb800] border-[#ffb800]/30',
+      accent: 'text-[#ffb800]',
+      pill: 'Earn • Gambling',
+    };
+  } else if (card.category === 'grow') {
     categoryTheme = {
       badge: 'bg-[#00d4ff]/10 text-[#00d4ff] border-[#00d4ff]/30',
       border: 'border-[#22242a] hover:border-[#00d4ff]/50',

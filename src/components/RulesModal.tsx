@@ -73,11 +73,15 @@ export const RulesModal: React.FC<RulesModalProps> = ({ onClose }) => {
               <div className="p-3 rounded-xl bg-[#0c0d10] border border-[#ff3b5c]/30">
                 <div className="flex items-center gap-2 text-[#ff3b5c] font-bold mb-1">
                   <ShieldAlert className="w-4 h-4" />
-                  <span>4. Sloth (The Disguised Hazard)</span>
+                  <span>4. Sloth (Lottery & Gambling Traps)</span>
                 </div>
-                <p className="text-[11px] text-[#8a8f98]">
-                  Sloth cards appear disguised as normal high-reward Earn or Grow opportunities (gambling schemes, mega-raffles, or stimulant shortcuts). They trigger severe hidden penalties, entropy acceleration, and phantom credit fraud defaults!
+                <p className="text-[11px] text-[#8a8f98] leading-relaxed">
+                  Sloth opportunities are obvious speculative lures (<strong className="text-[#ff9900]">Lotteries</strong> & <strong className="text-[#ff3b5c]">Gambling</strong>):
                 </p>
+                <ul className="mt-1 space-y-1 text-[11px] text-[#8a8f98] list-disc list-inside">
+                  <li><strong className="text-[#ff9900]">Lottery:</strong> Advertises giant jackpots (e.g. "Cancer Research Lottery"), but pays less than 10% of the time and only in small amounts. When you lose, entropy spikes because collective wealth was squandered instead of being used for good deeds.</li>
+                  <li><strong className="text-[#ff3b5c]">Gambling:</strong> Seldom pays and only in small amounts. Gambling causes higher entropy spikes than lottery, accelerating societal decay.</li>
+                </ul>
               </div>
             </div>
           </div>

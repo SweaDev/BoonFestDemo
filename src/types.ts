@@ -25,7 +25,7 @@ export interface CardPayload {
   hueRecovery?: number;  // for boon cards
 }
 
-export type SlothArchetype = 'gambling' | 'lottery' | 'substance';
+export type SlothArchetype = 'lottery' | 'gambling';
 
 export interface SlothPenalty {
   archetype: SlothArchetype;

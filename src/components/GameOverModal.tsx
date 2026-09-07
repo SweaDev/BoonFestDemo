@@ -357,31 +357,29 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                     : 'To adhere to the Anti-Sloth lifecycle rules, subsequent runs require registering a unique username to access the permanent Trophy Case and historical telemetry.'}
                 </p>
 
-                <form onSubmit={handleRegisterAndClaim} className="mt-3 space-y-3">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                  }}
+                  className="mt-3 space-y-3"
+                >
+                  <div className="p-2.5 rounded-lg bg-[#ffb800]/15 border border-[#ffb800]/30 text-[#ffb800] text-xs flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-[#ffb800]" />
+                    <span>Account registration and Google Sign-in are temporarily disabled. You can continue playing subsequent runs directly as a Guest.</span>
+                  </div>
+
                   <div>
                     <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
                       Choose Unique Username <span className="text-[#ff3b5c]">*</span>
                     </label>
                     <input
                       type="text"
-                      required
-                      placeholder="Choose unique username (e.g. Phoenix, Starlight)..."
+                      disabled={true}
+                      placeholder="Registration temporarily disabled..."
                       value={usernameInput}
                       onChange={(e) => setUsernameInput(e.target.value)}
-                      className={`w-full px-3 py-1.5 rounded-lg bg-[#0c0d10] border text-[#f0f2f5] text-xs focus:outline-none font-mono ${
-                        isRestrictedEntered
-                          ? 'border-[#ff3b5c] focus:border-[#ff3b5c]'
-                          : 'border-[#22242a] focus:border-[#ffb800]'
-                      }`}
+                      className="w-full px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-[#8a8f98] text-xs focus:outline-none font-mono cursor-not-allowed opacity-60"
                     />
-                    {isRestrictedEntered && (
-                      <div className="mt-1 text-[11px] text-[#ff3b5c] flex items-center gap-1 font-semibold">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>
-                          &apos;{usernameInput.trim()}&apos; is a reserved name. Dev, Admin, demo, Boonfest, and system names cannot be registered.
-                        </span>
-                      </div>
-                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -391,21 +389,13 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                       </label>
                       <div className="relative">
                         <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          minLength={6}
-                          placeholder="Create password..."
+                          type="password"
+                          disabled={true}
+                          placeholder="Disabled for now..."
                           value={passwordInput}
                           onChange={(e) => setPasswordInput(e.target.value)}
-                          className="w-full pl-3 pr-8 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-[#f0f2f5] text-xs focus:outline-none focus:border-[#ffb800] font-mono"
+                          className="w-full pl-3 pr-8 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-[#8a8f98] text-xs focus:outline-none font-mono cursor-not-allowed opacity-60"
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-2 top-2 text-[#8a8f98] hover:text-[#f0f2f5] cursor-pointer"
-                        >
-                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
                       </div>
                     </div>
 
@@ -414,45 +404,40 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                         Confirm Password <span className="text-[#ff3b5c]">*</span>
                       </label>
                       <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        minLength={6}
-                        placeholder="Confirm password..."
+                        type="password"
+                        disabled={true}
+                        placeholder="Disabled for now..."
                         value={confirmPasswordInput}
                         onChange={(e) => setConfirmPasswordInput(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-[#f0f2f5] text-xs focus:outline-none focus:border-[#ffb800] font-mono"
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-[#8a8f98] text-xs focus:outline-none font-mono cursor-not-allowed opacity-60"
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
                     <button
-                      type="submit"
-                      disabled={
-                        isSubmittingUser ||
-                        !usernameInput.trim() ||
-                        isRestrictedEntered ||
-                        passwordInput.length < 6 ||
-                        passwordInput !== confirmPasswordInput
-                      }
-                      className="w-full sm:w-auto flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#ffb800] hover:bg-[#ffd000] text-[#0c0d10] font-bold text-xs transition cursor-pointer disabled:opacity-50"
+                      type="button"
+                      disabled={true}
+                      title="Registration is temporarily disabled"
+                      className="w-full sm:w-auto flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#ffb800]/50 text-[#0c0d10]/70 font-bold text-xs transition cursor-not-allowed opacity-50"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      <span>{isSubmittingUser ? 'Minting & Saving...' : 'Register & Save Score'}</span>
+                      <span>Register & Save Score (Disabled)</span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setIsGoogleModalOpen(true)}
-                      className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#ffffff] hover:bg-[#f1f3f4] text-[#3c4043] font-bold text-xs transition cursor-pointer shadow"
+                      disabled={true}
+                      title="Register with Google is temporarily disabled"
+                      className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#ffffff]/60 text-[#3c4043]/70 font-bold text-xs transition cursor-not-allowed opacity-50 shadow"
                     >
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5">
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-70">
                         <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
                         <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z" />
                         <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
                         <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
                       </svg>
-                      <span>Register with Google</span>
+                      <span>Register with Google (Disabled)</span>
                     </button>
                   </div>
                 </form>
@@ -621,7 +606,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           </div>
 
           <button
-            disabled={requiresRegistration && !isRegisteredNow}
+            disabled={false}
             onClick={onStartNewRun}
             className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#00ff95] text-[#0c0d10] hover:bg-[#33ffaa] font-black text-xs transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,255,149,0.3)]"
           >

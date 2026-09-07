@@ -195,6 +195,12 @@ app.get('/api/auth/restricted-names', (req, res) => {
 
 // Authentication / Account Registration (Requires username and password)
 app.post('/api/auth/register', (req, res) => {
+  // REGISTRATION TEMPORARILY DISABLED: Preserved for future release
+  return res.status(403).json({
+    error: 'Account registration is temporarily disabled. Please log in with an existing account or continue playing as Guest.',
+  });
+
+  /*
   const { username, password, sessionId } = req.body;
   if (!username || typeof username !== 'string' || username.trim().length < 3) {
     return res.status(400).json({ error: 'Username must be at least 3 characters long.' });
@@ -242,6 +248,7 @@ app.post('/api/auth/register', (req, res) => {
     },
     pacing,
   });
+  */
 });
 
 // Authentication / Login with username and password
@@ -346,6 +353,12 @@ app.post('/api/auth/login', (req, res) => {
 
 // Authentication / Google Account Register and Login
 app.post('/api/auth/google', (req, res) => {
+  // GOOGLE SIGN-IN & REGISTRATION TEMPORARILY DISABLED: Preserved for future release
+  return res.status(403).json({
+    error: 'Sign in with Google is temporarily disabled. Please log in with your credentials or continue playing as Guest.',
+  });
+
+  /*
   const { credential, email, name, googleId, sessionId, desiredUsername } = req.body;
 
   let verifiedEmail = email;
@@ -448,6 +461,7 @@ app.post('/api/auth/google', (req, res) => {
     pacing,
     devStatus,
   });
+  */
 });
 
 // Authentication / Change Password
@@ -1033,11 +1047,8 @@ app.post('/api/game/over', async (req, res) => {
   const { isTop10, rank } = storage.isTop10Score(telemetry.boonPoints);
 
   // Guest Top-10 Exception:
-  // "If a guest's first run achieves a Top-10 score on the global leaderboard,
-  // the game must pause on the game-over screen and require username registration immediately
-  // to mint their trophy and save their score to the leaderboard."
-  // Dev users never require guest registration.
-  const requiresRegistration = session.isGuest && (isTop10 || session.gameCount >= 1) && !isDev;
+  // (Registration is temporarily disabled for now; set requiresRegistration to false so guests can continue playing)
+  const requiresRegistration = false; // Preserved for future: session.isGuest && (isTop10 || session.gameCount >= 1) && !isDev;
 
   let trophy = undefined;
 
@@ -1094,32 +1105,40 @@ app.post('/api/game/claim-guest-trophy', async (req, res) => {
 
   const cleanName = username.trim();
 
+  // If googleAuth is attempted while disabled
+  if (googleAuth) {
+    return res.status(403).json({ error: 'Google authentication is temporarily disabled.' });
+  }
+
   // Check if user already exists
   const existing = storage.getUser(cleanName);
   if (existing) {
-    if (!googleAuth) {
-      if (!password || !storage.verifyUserPassword(existing, password)) {
-        return res.status(401).json({ error: 'Username already exists. Incorrect password.' });
-      }
+    if (!password || !storage.verifyUserPassword(existing, password)) {
+      return res.status(401).json({ error: 'Username already exists. Incorrect password.' });
     }
   } else {
-    // New user registration
+    // New registration disabled for now
+    return res.status(403).json({
+      error: 'Account registration is temporarily disabled. Please log in with an existing account to claim your score.',
+    });
+    /*
     if (isRestrictedUsername(cleanName)) {
       return res.status(400).json({
         error: `Username '${cleanName}' is reserved and cannot be registered. Please pick another name.`,
       });
     }
-    if (!googleAuth && (!password || typeof password !== 'string' || password.length < 6)) {
+    if (!password || typeof password !== 'string' || password.length < 6) {
       return res.status(400).json({
         error: 'Password is required and must be at least 6 characters long.',
       });
     }
     storage.registerUser(cleanName, {
       password,
-      authProvider: googleAuth ? 'google' : 'local',
-      email: googleAuth?.email,
-      googleId: googleAuth?.googleId,
+      authProvider: 'local',
+      email: undefined,
+      googleId: undefined,
     });
+    */
   }
 
   if (sessionId && activeSessions[sessionId]) {

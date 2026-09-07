@@ -107,11 +107,21 @@ export const GoogleSignInModal: React.FC<GoogleSignInModalProps> = ({
           </button>
         </div>
 
+        <div className="p-3 rounded-lg bg-[#ffb800]/10 border border-[#ffb800]/30 text-xs text-[#ffb800] flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 text-[#ffb800]" />
+          <span>Sign in with Google is temporarily disabled. The UI and integration code are preserved for an upcoming release.</span>
+        </div>
+
         <p className="text-xs text-[#8a8f98] leading-relaxed">
           Authenticate directly with your Google account. Your email will be linked to your BoonFest profile for seamless, passwordless login.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+          }}
+          className="space-y-3"
+        >
           <div>
             <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
               Google Account Email <span className="text-[#ff3b5c]">*</span>
@@ -120,11 +130,11 @@ export const GoogleSignInModal: React.FC<GoogleSignInModalProps> = ({
               <Mail className="w-4 h-4 text-[#8a8f98] absolute left-3 top-2.5" />
               <input
                 type="email"
-                required
-                placeholder="name@gmail.com"
+                disabled={true}
+                placeholder="name@gmail.com (Disabled)"
                 value={googleEmail}
                 onChange={(e) => setGoogleEmail(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] focus:outline-none focus:border-[#4285F4]"
+                className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#8a8f98] focus:outline-none cursor-not-allowed opacity-60"
               />
             </div>
           </div>
@@ -135,10 +145,11 @@ export const GoogleSignInModal: React.FC<GoogleSignInModalProps> = ({
             </label>
             <input
               type="text"
+              disabled={true}
               placeholder="e.g. Alex Mercer"
               value={googleName}
               onChange={(e) => setGoogleName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] focus:outline-none focus:border-[#4285F4]"
+              className="w-full px-3 py-2 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#8a8f98] focus:outline-none cursor-not-allowed opacity-60"
             />
           </div>
 
@@ -148,10 +159,11 @@ export const GoogleSignInModal: React.FC<GoogleSignInModalProps> = ({
             </label>
             <input
               type="text"
+              disabled={true}
               placeholder="Leave blank to auto-generate from email"
               value={preferredUsername}
               onChange={(e) => setPreferredUsername(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#4285F4]"
+              className="w-full px-3 py-2 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#8a8f98] font-mono focus:outline-none cursor-not-allowed opacity-60"
             />
             <p className="text-[10px] text-[#8a8f98] mt-1">
               Note: Restricted names like <code className="text-[#ff3b5c]">dev</code>, <code className="text-[#ff3b5c]">admin</code>, <code className="text-[#ff3b5c]">demo</code>, <code className="text-[#ff3b5c]">boonfest</code> are reserved.
@@ -171,21 +183,16 @@ export const GoogleSignInModal: React.FC<GoogleSignInModalProps> = ({
               onClick={onClose}
               className="px-3.5 py-2 rounded-lg bg-[#1a1c22] border border-[#22242a] text-xs font-semibold text-[#8a8f98] hover:text-[#f0f2f5] transition cursor-pointer"
             >
-              Cancel
+              Close
             </button>
             <button
-              type="submit"
-              disabled={isSubmitting || !googleEmail.trim()}
-              className="px-5 py-2 rounded-lg bg-[#4285F4] hover:bg-[#3367D6] text-[#ffffff] text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow"
+              type="button"
+              disabled={true}
+              title="Google authentication is temporarily disabled"
+              className="px-5 py-2 rounded-lg bg-[#4285F4]/60 text-[#ffffff]/70 text-xs font-bold transition cursor-not-allowed opacity-50 flex items-center gap-2 shadow"
             >
-              {isSubmitting ? (
-                <span>Authenticating...</span>
-              ) : (
-                <>
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>{actionText}</span>
-                </>
-              )}
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>{actionText} (Disabled)</span>
             </button>
           </div>
         </form>

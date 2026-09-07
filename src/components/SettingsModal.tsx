@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  Users,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DevConfigStatus, DevGrantRecord, PlaytimeStats } from '../types';
@@ -674,23 +675,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                           <button
                             type="button"
-                            onClick={() => {
-                              setGoogleModalTitle('Sign In with Google');
-                              setGoogleModalAction('Sign in with Google');
-                              setIsGoogleModalOpen(true);
-                            }}
-                            className="flex-1 py-2 rounded-lg bg-[#ffffff] hover:bg-[#f1f3f4] text-[#3c4043] text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2 shadow"
+                            disabled={true}
+                            title="Sign in with Google is temporarily disabled"
+                            className="flex-1 py-2 rounded-lg bg-[#ffffff]/60 text-[#3c4043]/70 text-xs font-bold transition cursor-not-allowed flex items-center justify-center gap-2 shadow opacity-60"
                           >
-                            <svg viewBox="0 0 24 24" className="w-4 h-4">
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 opacity-70">
                               <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
                               <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z" />
                               <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
                               <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
                             </svg>
-                            <span>Sign in with Google</span>
+                            <span>Sign in with Google (Disabled)</span>
                           </button>
                         </div>
                       </form>
+
+                      {/* Demo Accounts Quick-Select */}
+                      <div className="p-3 rounded-lg bg-[#131418] border border-[#22242a] space-y-2">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold text-[#f0f2f5] flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-[#00ff95]" />
+                            <span>Demo Accounts (Password: <code className="text-[#00ff95] font-mono">username!</code>)</span>
+                          </span>
+                          <span className="text-[10px] text-[#8a8f98]">Click to select & log in</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-0.5">
+                          {['demouser1', 'demouser2', 'demouser3', 'demouser4', 'demouser5'].map((demo) => (
+                            <button
+                              key={demo}
+                              type="button"
+                              onClick={() => {
+                                setSwitchUsername(demo);
+                                setLoginPasswordInput(`${demo}!`);
+                                handleQuickLogin(demo, `${demo}!`);
+                              }}
+                              className="px-2 py-1.5 rounded-lg bg-[#1a1c22] hover:bg-[#252832] border border-[#262930] hover:border-[#00ff95]/60 text-xs font-mono text-[#f0f2f5] transition cursor-pointer flex flex-col items-center justify-center gap-0.5 group"
+                            >
+                              <span className="text-[11px] font-bold group-hover:text-[#00ff95] transition">{demo}</span>
+                              <span className="text-[9px] text-[#8a8f98] font-normal">{demo}!</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
                       {/* Dev Shortcut */}
                       <div className="pt-2 border-t border-[#22242a]/60 flex items-center justify-between">
@@ -739,31 +765,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {/* Register Sub-view */}
                   {guestAuthMode === 'register' && (
-                    <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                      }}
+                      className="space-y-3"
+                    >
+                      {/* Notice that registration is temporarily disabled */}
+                      <div className="p-3 rounded-lg bg-[#ffb800]/10 border border-[#ffb800]/30 text-xs text-[#ffb800] flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0 text-[#ffb800]" />
+                        <span>Account registration is temporarily disabled. Please log in with an existing account or continue playing as a Guest.</span>
+                      </div>
+
                       <div>
                         <label className="text-[11px] font-bold text-[#8a8f98] block mb-1">
                           Choose Username <span className="text-[#ff3b5c]">*</span>
                         </label>
                         <input
                           type="text"
-                          required
-                          placeholder="Choose unique username (e.g. Phoenix, Starlight)..."
+                          disabled={true}
+                          placeholder="Registration temporarily disabled..."
                           value={registerUsernameInput}
                           onChange={(e) => setRegisterUsernameInput(e.target.value)}
-                          className={`w-full px-3 py-2 rounded-lg bg-[#131418] border text-xs text-[#f0f2f5] font-mono focus:outline-none ${
-                            isRestrictedEntered
-                              ? 'border-[#ff3b5c] focus:border-[#ff3b5c]'
-                              : 'border-[#22242a] focus:border-[#00ff95]'
-                          }`}
+                          className="w-full px-3 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#8a8f98] font-mono focus:outline-none cursor-not-allowed opacity-60"
                         />
-                        {isRestrictedEntered && (
-                          <div className="mt-1 text-[11px] text-[#ff3b5c] flex items-center gap-1 font-semibold">
-                            <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>
-                              &apos;{registerUsernameInput.trim()}&apos; is a reserved name. Dev, Admin, demo, Boonfest, and system names cannot be registered.
-                            </span>
-                          </div>
-                        )}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -773,21 +798,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           </label>
                           <div className="relative">
                             <input
-                              type={showRegisterPassword ? 'text' : 'password'}
-                              required
-                              minLength={6}
-                              placeholder="Create a password..."
+                              type="password"
+                              disabled={true}
+                              placeholder="Disabled for now..."
                               value={registerPasswordInput}
                               onChange={(e) => setRegisterPasswordInput(e.target.value)}
-                              className="w-full pl-3 pr-8 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                              className="w-full pl-3 pr-8 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#8a8f98] font-mono focus:outline-none cursor-not-allowed opacity-60"
                             />
-                            <button
-                              type="button"
-                              onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                              className="absolute right-2 top-2.5 text-[#8a8f98] hover:text-[#f0f2f5] cursor-pointer"
-                            >
-                              {showRegisterPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
                           </div>
                         </div>
 
@@ -796,53 +813,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             Confirm Password <span className="text-[#ff3b5c]">*</span>
                           </label>
                           <input
-                            type={showRegisterPassword ? 'text' : 'password'}
-                            required
-                            minLength={6}
-                            placeholder="Confirm your password..."
+                            type="password"
+                            disabled={true}
+                            placeholder="Disabled for now..."
                             value={registerConfirmPasswordInput}
                             onChange={(e) => setRegisterConfirmPasswordInput(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
+                            className="w-full px-3 py-2 rounded-lg bg-[#131418] border border-[#22242a] text-xs text-[#8a8f98] font-mono focus:outline-none cursor-not-allowed opacity-60"
                           />
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 pt-2">
                         <button
-                          type="submit"
-                          disabled={
-                            isRegistering ||
-                            !registerUsernameInput.trim() ||
-                            isRestrictedEntered ||
-                            registerPasswordInput.length < 6 ||
-                            registerPasswordInput !== registerConfirmPasswordInput
-                          }
-                          className="flex-1 py-2 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                          type="button"
+                          disabled={true}
+                          title="Registration is temporarily disabled"
+                          className="flex-1 py-2 rounded-lg bg-[#00ff95]/50 text-[#0c0d10]/70 text-xs font-extrabold transition cursor-not-allowed opacity-50 flex items-center justify-center gap-1.5"
                         >
                           <UserPlus className="w-3.5 h-3.5" />
-                          <span>{isRegistering ? 'Registering...' : 'Register with Password'}</span>
+                          <span>Register with Password (Disabled)</span>
                         </button>
 
                         <button
                           type="button"
-                          onClick={() => {
-                            setGoogleModalTitle('Register with Google Account');
-                            setGoogleModalAction('Register with Google');
-                            setIsGoogleModalOpen(true);
-                          }}
-                          className="flex-1 py-2 rounded-lg bg-[#ffffff] hover:bg-[#f1f3f4] text-[#3c4043] text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2 shadow"
+                          disabled={true}
+                          title="Register with Google is temporarily disabled"
+                          className="flex-1 py-2 rounded-lg bg-[#ffffff]/60 text-[#3c4043]/70 text-xs font-bold transition cursor-not-allowed flex items-center justify-center gap-2 shadow opacity-50"
                         >
-                          <svg viewBox="0 0 24 24" className="w-4 h-4">
+                          <svg viewBox="0 0 24 24" className="w-4 h-4 opacity-70">
                             <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
                             <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z" />
                             <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
                             <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
                           </svg>
-                          <span>Register with Google</span>
+                          <span>Register with Google (Disabled)</span>
                         </button>
                       </div>
                       <p className="text-[11px] text-[#8a8f98]">
-                        Registering converts your temporary session into a permanent profile, enabling your personal Trophy Case and persistent leaderboard records.
+                        Registration is temporarily paused and will be finalized soon. Guests enjoy full gameplay with session scoring.
                       </p>
                     </form>
                   )}

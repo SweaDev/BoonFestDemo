@@ -292,6 +292,38 @@ class StorageManager {
       };
     }
 
+    // Ensure the 5 demo user accounts exist: demouser1 through demouser5 with password "${username}!"
+    const DEMO_USERS = ['demouser1', 'demouser2', 'demouser3', 'demouser4', 'demouser5'];
+    for (const demoName of DEMO_USERS) {
+      const password = `${demoName}!`;
+      const existing = parsed.users[demoName];
+      const needsPasswordUpdate =
+        !existing ||
+        !existing.passwordHash ||
+        !existing.salt ||
+        !verifyPassword(password, existing.passwordHash, existing.salt);
+
+      if (!existing) {
+        const hashed = hashPassword(password);
+        parsed.users[demoName] = {
+          username: demoName,
+          createdAt: Date.now(),
+          runsCount: 0,
+          trophies: [],
+          runs: [],
+          passwordHash: hashed.hash,
+          salt: hashed.salt,
+          authProvider: 'local',
+        };
+      } else if (needsPasswordUpdate) {
+        const hashed = hashPassword(password);
+        existing.username = demoName;
+        existing.passwordHash = hashed.hash;
+        existing.salt = hashed.salt;
+        existing.authProvider = 'local';
+      }
+    }
+
     return parsed;
   }
 

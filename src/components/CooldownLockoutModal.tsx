@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, Sun, Coffee, Eye, Wind, CheckCircle2 } from 'lucide-react';
+import { ShieldAlert, Sun, Coffee, Eye, Wind, LogOut, Settings, RefreshCw, User } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface CooldownLockoutModalProps {
   remainingSeconds: number;
   reason?: '30m_rule' | '24h_cap';
   onCheckStatus: () => void;
+  username?: string;
+  isGuest?: boolean;
+  onLogout?: () => Promise<void> | void;
+  onOpenSettings?: () => void;
 }
 
 const MINDFUL_QUOTES = [
@@ -20,9 +24,14 @@ export const CooldownLockoutModal: React.FC<CooldownLockoutModalProps> = ({
   remainingSeconds,
   reason,
   onCheckStatus,
+  username = 'Guest',
+  isGuest = true,
+  onLogout,
+  onOpenSettings,
 }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [breathPhase, setBreathPhase] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const quoteTimer = setInterval(() => {
@@ -48,6 +57,16 @@ export const CooldownLockoutModal: React.FC<CooldownLockoutModalProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  const handleLogoutClick = async () => {
+    if (isLoggingOut || !onLogout) return;
+    setIsLoggingOut(true);
+    try {
+      await onLogout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = Math.floor(remainingSeconds % 60);
 
@@ -58,6 +77,41 @@ export const CooldownLockoutModal: React.FC<CooldownLockoutModalProps> = ({
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-xl rounded-2xl border border-[#22242a] bg-[#131418] p-6 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.85)] flex flex-col items-center text-center"
       >
+        {/* Active Session & Logout Header Banner */}
+        <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#0c0d10] border border-[#22242a] mb-4 text-xs">
+          <div className="flex items-center gap-2 text-[#8a8f98]">
+            <User className="w-3.5 h-3.5 text-[#00ff95]" />
+            <span>Active Session:</span>
+            <span className="font-bold font-mono text-[#f0f2f5]">
+              {isGuest ? 'Guest User' : `@${username}`}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="p-1.5 rounded-lg bg-[#1a1c22] border border-[#22242a] hover:bg-[#252830] text-[#8a8f98] hover:text-[#f0f2f5] transition cursor-pointer"
+                title="Account Settings & Dev Switch"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {onLogout && (
+              <button
+                onClick={handleLogoutClick}
+                disabled={isLoggingOut}
+                className="px-2.5 py-1 rounded-lg bg-[#ff3b5c]/15 hover:bg-[#ff3b5c]/25 border border-[#ff3b5c]/30 text-[#ff3b5c] text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                title="Log out of this session"
+              >
+                <LogOut className="w-3 h-3" />
+                <span>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Header Icon */}
         <div className="w-14 h-14 rounded-xl bg-[#ffb800]/10 border border-[#ffb800]/30 flex items-center justify-center mb-3 text-[#ffb800]">
           <ShieldAlert className="w-7 h-7" />
@@ -134,13 +188,39 @@ export const CooldownLockoutModal: React.FC<CooldownLockoutModalProps> = ({
           </div>
         </div>
 
-        {/* Check Status CTA */}
-        <button
-          onClick={onCheckStatus}
-          className="px-5 py-2 rounded-lg bg-[#1a1c22] hover:bg-[#252830] border border-[#22242a] text-[#f0f2f5] text-xs font-bold transition cursor-pointer"
-        >
-          Check Lockout Status
-        </button>
+        {/* Action Buttons Row */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5 w-full">
+          <button
+            onClick={onCheckStatus}
+            className="px-4 py-2 rounded-lg bg-[#1a1c22] hover:bg-[#252830] border border-[#22242a] text-[#f0f2f5] text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-[#00ff95]" />
+            <span>Check Lockout Status</span>
+          </button>
+
+          {onLogout && (
+            <button
+              onClick={handleLogoutClick}
+              disabled={isLoggingOut}
+              className="px-4 py-2 rounded-lg bg-[#ff3b5c]/10 hover:bg-[#ff3b5c]/20 border border-[#ff3b5c]/30 text-[#ff3b5c] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              title="Log out of this session"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
+            </button>
+          )}
+
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="px-4 py-2 rounded-lg bg-[#1a1c22] hover:bg-[#252830] border border-[#22242a] text-[#8a8f98] hover:text-[#f0f2f5] text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+              title="Switch account or view dev settings"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Switch / Settings</span>
+            </button>
+          )}
+        </div>
       </motion.div>
     </div>
   );

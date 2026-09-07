@@ -585,6 +585,10 @@ export default function App() {
         <CooldownLockoutModal
           remainingSeconds={playtimeStats.lockoutRemainingSeconds}
           reason={playtimeStats.lockoutReason}
+          username={username}
+          isGuest={isGuest}
+          onLogout={handleLogout}
+          onOpenSettings={() => setShowSettings(true)}
           onCheckStatus={async () => {
             const res = await fetch(`/api/playtime/heartbeat`, {
               method: 'POST',

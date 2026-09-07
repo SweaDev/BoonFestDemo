@@ -26,12 +26,14 @@ import {
   CheckCircle2,
   Ban,
   Bot,
+  Layers,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DevConfigStatus, DevGrantRecord, PlaytimeStats, ManagedUserRecord } from '../types';
 import { GoogleSignInModal } from './GoogleSignInModal';
 import { GoogleAuthPayload } from '../lib/googleAuth';
 import { DevAISettingsTab } from './DevAISettingsTab';
+import { DevCardsManagementTab } from './DevCardsManagementTab';
 
 export const RESTRICTED_USERNAMES_LIST = [
   'dev',
@@ -79,7 +81,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onGoogleAuth,
   onAddToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'account' | 'users' | 'ai' | 'dev_security' | 'dev_grants'>('account');
+  const [activeTab, setActiveTab] = useState<'account' | 'users' | 'cards' | 'ai' | 'dev_security' | 'dev_grants'>('account');
 
   // Dev Config & Grants State
   const [devConfig, setDevConfig] = useState<DevConfigStatus | null>(null);
@@ -608,22 +610,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
 
           {isMainDev && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'users'
+                  ? 'border-[#00ff95] text-[#00ff95]'
+                  : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Users</span>
+              {managedUsers.length > 0 && (
+                <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-[#1c1f26] text-[#8a8f98] font-mono">
+                  {managedUsers.length}
+                </span>
+              )}
+            </button>
+          )}
+
+          {(isMainDev || isDevUser) && (
             <>
               <button
-                onClick={() => setActiveTab('users')}
+                onClick={() => setActiveTab('cards')}
                 className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'users'
+                  activeTab === 'cards'
                     ? 'border-[#00ff95] text-[#00ff95]'
                     : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
                 }`}
               >
-                <Users className="w-3.5 h-3.5" />
-                <span>Users</span>
-                {managedUsers.length > 0 && (
-                  <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-[#1c1f26] text-[#8a8f98] font-mono">
-                    {managedUsers.length}
-                  </span>
-                )}
+                <Layers className="w-3.5 h-3.5" />
+                <span>Cards</span>
+                <span className="px-1.5 py-0.2 text-[9px] rounded-full bg-[#00ff95]/15 text-[#00ff95] font-mono border border-[#00ff95]/30">
+                  Pool
+                </span>
               </button>
 
               <button
@@ -640,7 +659,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   Gemini
                 </span>
               </button>
+            </>
+          )}
 
+          {isMainDev && (
+            <>
               <button
                 onClick={() => setActiveTab('dev_security')}
                 className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
@@ -1465,6 +1488,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
               </div>
             </div>
+          )}
+
+          {/* TAB: Cards (Card Management: Earn, Grow, Boon, Sloth) */}
+          {activeTab === 'cards' && (isMainDev || isDevUser) && (
+            <DevCardsManagementTab
+              currentUsername={currentUsername}
+              onAddToast={onAddToast}
+            />
           )}
 
           {/* TAB: AI (In-Game AI Usage & Model Management) */}

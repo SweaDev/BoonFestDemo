@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { AITaskConfig, AITaskId, AIUsageConfig, DevGrantRecord, LeaderboardEntry, PlaytimeStats, RunTelemetry, Trophy, UserSession } from '../src/types';
+import { AITaskConfig, AITaskId, AIUsageConfig, CardManagementTab, CardPayload, DevGrantRecord, GameCardCollections, LeaderboardEntry, PlaytimeStats, RunTelemetry, SlothCardDefinition, Trophy, UserSession } from '../src/types';
+import { BASE_BOON_CARDS, BASE_EARN_CARDS, BASE_GROW_CARDS, BASE_SLOTH_CARDS } from './data/cardPool';
 
 export const RESTRICTED_USERNAMES = [
   'dev',
@@ -77,6 +78,7 @@ interface DBData {
     updatedAt?: number;
   };
   aiConfig?: AIUsageConfig;
+  cards?: GameCardCollections;
 }
 
 export const DEFAULT_AI_CONFIG: AIUsageConfig = {
@@ -1014,6 +1016,149 @@ class StorageManager {
     this.data.aiConfig.lastUpdated = Date.now();
     this.persist();
     return this.data.aiConfig;
+  }
+
+  public getCardCollections(): GameCardCollections {
+    if (!this.data.cards) {
+      this.data.cards = {
+        earn: JSON.parse(JSON.stringify(BASE_EARN_CARDS)),
+        grow: JSON.parse(JSON.stringify(BASE_GROW_CARDS)),
+        boon: JSON.parse(JSON.stringify(BASE_BOON_CARDS)),
+        sloth: JSON.parse(JSON.stringify(BASE_SLOTH_CARDS)),
+      };
+      this.persist();
+    } else {
+      // Ensure all 4 categories exist
+      let changed = false;
+      if (!Array.isArray(this.data.cards.earn) || this.data.cards.earn.length === 0) {
+        this.data.cards.earn = JSON.parse(JSON.stringify(BASE_EARN_CARDS));
+        changed = true;
+      }
+      if (!Array.isArray(this.data.cards.grow) || this.data.cards.grow.length === 0) {
+        this.data.cards.grow = JSON.parse(JSON.stringify(BASE_GROW_CARDS));
+        changed = true;
+      }
+      if (!Array.isArray(this.data.cards.boon) || this.data.cards.boon.length === 0) {
+        this.data.cards.boon = JSON.parse(JSON.stringify(BASE_BOON_CARDS));
+        changed = true;
+      }
+      if (!Array.isArray(this.data.cards.sloth) || this.data.cards.sloth.length === 0) {
+        this.data.cards.sloth = JSON.parse(JSON.stringify(BASE_SLOTH_CARDS));
+        changed = true;
+      }
+      if (changed) {
+        this.persist();
+      }
+    }
+    return this.data.cards;
+  }
+
+  public saveCard(category: CardManagementTab, card: any): GameCardCollections {
+    const collections = this.getCardCollections();
+    const targetPool = collections[category];
+
+    // Ensure valid ID
+    let cardId = (card.id || '').trim();
+    if (!cardId) {
+      cardId = `${category}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    }
+
+    const cleanCard: any = {
+      ...card,
+      id: cardId,
+      category,
+      tier: Number(card.tier) || 1,
+      cost: Math.max(0, Number(card.cost) || 0),
+      title: (card.title || 'Untitled Card').trim(),
+      description: (card.description || '').trim(),
+      flavor: (card.flavor || '').trim(),
+      iconName: (card.iconName || 'Sparkles').trim(),
+      rewardDescription: (card.rewardDescription || '').trim(),
+    };
+
+    if (card.prerequisites) {
+      cleanCard.prerequisites = {
+        ...(card.prerequisites.mind ? { mind: Number(card.prerequisites.mind) } : {}),
+        ...(card.prerequisites.body ? { body: Number(card.prerequisites.body) } : {}),
+        ...(card.prerequisites.spirit ? { spirit: Number(card.prerequisites.spirit) } : {}),
+      };
+      if (Object.keys(cleanCard.prerequisites).length === 0) {
+        delete cleanCard.prerequisites;
+      }
+    }
+
+    if (category === 'earn') {
+      cleanCard.creditYield = Math.max(1, Number(card.creditYield) || 45);
+      if (!cleanCard.rewardDescription) {
+        cleanCard.rewardDescription = `+${cleanCard.creditYield} Credits`;
+      }
+    } else if (category === 'grow') {
+      cleanCard.targetPillar = (card.targetPillar === 'body' || card.targetPillar === 'spirit') ? card.targetPillar : 'mind';
+      if (!cleanCard.rewardDescription) {
+        const pillarName = cleanCard.targetPillar.charAt(0).toUpperCase() + cleanCard.targetPillar.slice(1);
+        cleanCard.rewardDescription = `+1 ${pillarName} Level`;
+      }
+    } else if (category === 'boon') {
+      cleanCard.boonPoints = Math.max(1, Number(card.boonPoints) || 100);
+      cleanCard.hueRecovery = Math.max(1, Number(card.hueRecovery) || 15);
+      if (!cleanCard.rewardDescription) {
+        cleanCard.rewardDescription = `+${cleanCard.boonPoints} Boon Pts, +${cleanCard.hueRecovery}° Green`;
+      }
+    } else if (category === 'sloth') {
+      cleanCard.archetype = (card.archetype === 'gambling') ? 'gambling' : 'lottery';
+      cleanCard.disguisedCategory = (card.disguisedCategory === 'grow' || card.disguisedCategory === 'boon') ? card.disguisedCategory : 'earn';
+      cleanCard.entropySpike = Math.max(1, Number(card.entropySpike) || (cleanCard.archetype === 'gambling' ? 28 : 16));
+      cleanCard.entropyRateMultiplier = Math.max(1.01, Number(card.entropyRateMultiplier) || (cleanCard.archetype === 'gambling' ? 1.35 : 1.18));
+      cleanCard.phantomCredits = Math.max(0, Number(card.phantomCredits) || 0);
+      cleanCard.phantomDurationSec = Math.max(0, Number(card.phantomDurationSec) || 0);
+      if (!cleanCard.rewardDescription) {
+        cleanCard.rewardDescription = cleanCard.archetype === 'gambling'
+          ? 'High-Roller: Win up to 650 Credits!'
+          : 'Jackpot: Win up to 500 Credits!';
+      }
+    }
+
+    const existingIndex = (targetPool as any[]).findIndex(c => c.id === cardId);
+    if (existingIndex >= 0) {
+      (targetPool as any[])[existingIndex] = cleanCard;
+    } else {
+      (targetPool as any[]).push(cleanCard);
+    }
+
+    this.persist();
+    return collections;
+  }
+
+  public deleteCard(category: CardManagementTab, cardId: string): GameCardCollections {
+    const collections = this.getCardCollections();
+    const targetPool = collections[category];
+    (collections[category] as any[]) = (targetPool as any[]).filter(c => c.id !== cardId);
+    this.persist();
+    return collections;
+  }
+
+  public resetCardCollections(category?: CardManagementTab): GameCardCollections {
+    if (!this.data.cards) {
+      this.getCardCollections();
+    }
+    if (category === 'earn') {
+      this.data.cards!.earn = JSON.parse(JSON.stringify(BASE_EARN_CARDS));
+    } else if (category === 'grow') {
+      this.data.cards!.grow = JSON.parse(JSON.stringify(BASE_GROW_CARDS));
+    } else if (category === 'boon') {
+      this.data.cards!.boon = JSON.parse(JSON.stringify(BASE_BOON_CARDS));
+    } else if (category === 'sloth') {
+      this.data.cards!.sloth = JSON.parse(JSON.stringify(BASE_SLOTH_CARDS));
+    } else {
+      this.data.cards = {
+        earn: JSON.parse(JSON.stringify(BASE_EARN_CARDS)),
+        grow: JSON.parse(JSON.stringify(BASE_GROW_CARDS)),
+        boon: JSON.parse(JSON.stringify(BASE_BOON_CARDS)),
+        sloth: JSON.parse(JSON.stringify(BASE_SLOTH_CARDS)),
+      };
+    }
+    this.persist();
+    return this.data.cards!;
   }
 }
 

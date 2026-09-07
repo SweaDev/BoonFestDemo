@@ -168,22 +168,33 @@ let isRefillingSlothBuffer = false;
 
 // Procedural fallback generator for Sloth cards (0ms latency, zero AI cost)
 export function getProceduralSlothCard(): { card: CardPayload; hidden: HiddenSlothData } {
-  const archetypes: SlothArchetype[] = ['lottery', 'gambling'];
-  const chosenArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
-  const matching = CURATED_SLOTH_TEMPLATES.filter(t => t.archetype === chosenArchetype);
-  const template = matching.length > 0 ? matching[Math.floor(Math.random() * matching.length)] : CURATED_SLOTH_TEMPLATES[0];
+  let pool: any[] = [];
+  try {
+    const slothCards = storage.getCardCollections().sloth;
+    if (slothCards && slothCards.length > 0) {
+      pool = slothCards;
+    }
+  } catch {
+    pool = CURATED_SLOTH_TEMPLATES;
+  }
+  if (pool.length === 0) {
+    pool = CURATED_SLOTH_TEMPLATES;
+  }
+
+  const template = pool[Math.floor(Math.random() * pool.length)];
   const cardId = `sloth_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
   const card: CardPayload = {
     id: cardId,
     title: template.title,
-    category: template.disguisedCategory,
-    tier: 2,
+    category: template.disguisedCategory || 'earn',
+    tier: template.tier || 2,
     cost: template.cost,
     rewardDescription: template.rewardDescription,
     description: template.description,
     flavor: template.flavor,
     iconName: template.iconName,
+    prerequisites: template.prerequisites,
   };
 
   const hidden: HiddenSlothData = {
@@ -192,8 +203,8 @@ export function getProceduralSlothCard(): { card: CardPayload; hidden: HiddenSlo
       archetype: template.archetype,
       entropySpike: template.entropySpike,
       entropyRateMultiplier: template.entropyRateMultiplier,
-      phantomCredits: 0,
-      phantomDurationSec: 0,
+      phantomCredits: template.phantomCredits || 0,
+      phantomDurationSec: template.phantomDurationSec || 0,
       initialCreditsGiven: 0,
     },
   };

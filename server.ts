@@ -93,29 +93,40 @@ function updateSessionDecayRate(session: GameSessionState): { effectiveDecayRate
 // Helper to assemble a deck with Earn, Grow, Boon, and a deceptive Sloth card (instant execution)
 function drawHandForSession(session: GameSessionState): CardPayload[] {
   const { attributes, credits } = session;
+  const collections = storage.getCardCollections();
 
   // Filter accessible Earn cards (match prereqs or 1 aspirational)
-  const earnPool = BASE_EARN_CARDS.filter(c => {
+  const earnPool = collections.earn.filter(c => {
     if (!c.prerequisites) return true;
     const mindOk = !c.prerequisites.mind || attributes.mind >= c.prerequisites.mind;
     const bodyOk = !c.prerequisites.body || attributes.body >= c.prerequisites.body;
     const spiritOk = !c.prerequisites.spirit || attributes.spirit >= c.prerequisites.spirit;
     return mindOk && bodyOk && spiritOk;
   });
-  const earnSample = earnPool.sort(() => 0.5 - Math.random()).slice(0, 2);
+  const earnSource = earnPool.length > 0 ? earnPool : collections.earn;
+  const earnSample = [...earnSource].sort(() => 0.5 - Math.random()).slice(0, 2);
 
   // Filter Grow cards
-  const growPool = BASE_GROW_CARDS.filter(c => {
+  const growPool = collections.grow.filter(c => {
     if (!c.prerequisites) return true;
     const mindOk = !c.prerequisites.mind || attributes.mind >= c.prerequisites.mind;
     const bodyOk = !c.prerequisites.body || attributes.body >= c.prerequisites.body;
     const spiritOk = !c.prerequisites.spirit || attributes.spirit >= c.prerequisites.spirit;
     return mindOk && bodyOk && spiritOk;
   });
-  const growSample = growPool.sort(() => 0.5 - Math.random()).slice(0, 2);
+  const growSource = growPool.length > 0 ? growPool : collections.grow;
+  const growSample = [...growSource].sort(() => 0.5 - Math.random()).slice(0, 2);
 
   // Filter Boon cards
-  const boonSample = BASE_BOON_CARDS.sort(() => 0.5 - Math.random()).slice(0, 2);
+  const boonPool = collections.boon.filter(c => {
+    if (!c.prerequisites) return true;
+    const mindOk = !c.prerequisites.mind || attributes.mind >= c.prerequisites.mind;
+    const bodyOk = !c.prerequisites.body || attributes.body >= c.prerequisites.body;
+    const spiritOk = !c.prerequisites.spirit || attributes.spirit >= c.prerequisites.spirit;
+    return mindOk && bodyOk && spiritOk;
+  });
+  const boonSource = boonPool.length > 0 ? boonPool : collections.boon;
+  const boonSample = [...boonSource].sort(() => 0.5 - Math.random()).slice(0, 2);
 
   // Guaranteed deceptive Sloth card (Lottery or Gambling) in every hand, disguised with category 'earn'
   const { card: slothCard, hidden: slothHidden } = getInstantSlothCard(credits, attributes.mind);
@@ -778,6 +789,104 @@ app.post('/api/dev/ai-config/test', async (req, res) => {
   res.json(result);
 });
 
+// -----------------------------------------------------------------------------
+// DEV: CARD MANAGEMENT ENDPOINTS (Earn, Grow, Boon, Sloth)
+// -----------------------------------------------------------------------------
+
+// Get all card collections for Dev view
+app.get('/api/dev/cards', (req, res) => {
+  const username = (req.query.username as string || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(username);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can access card management.' });
+  }
+
+  const collections = storage.getCardCollections();
+  res.json({
+    success: true,
+    collections,
+  });
+});
+
+// Add or update a card in a specific category (Earn, Grow, Boon, Sloth)
+app.post('/api/dev/cards', (req, res) => {
+  const { currentUsername, category, card } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(cleanCaller);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can create or edit cards.' });
+  }
+
+  if (!category || !['earn', 'grow', 'boon', 'sloth'].includes(category)) {
+    return res.status(400).json({ error: 'Valid category (earn, grow, boon, sloth) is required.' });
+  }
+
+  if (!card || typeof card !== 'object' || !card.title) {
+    return res.status(400).json({ error: 'Card title and data are required.' });
+  }
+
+  try {
+    const updatedCollections = storage.saveCard(category, card);
+    res.json({
+      success: true,
+      message: `Card "${card.title}" saved successfully.`,
+      collections: updatedCollections,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to save card.' });
+  }
+});
+
+// Delete a card from a specific category
+app.delete('/api/dev/cards/:category/:cardId', (req, res) => {
+  const { category, cardId } = req.params;
+  const username = (req.query.username as string || req.body?.currentUsername || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(username);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can delete cards.' });
+  }
+
+  if (!category || !['earn', 'grow', 'boon', 'sloth'].includes(category)) {
+    return res.status(400).json({ error: 'Valid category (earn, grow, boon, sloth) is required.' });
+  }
+
+  if (!cardId) {
+    return res.status(400).json({ error: 'Card ID is required.' });
+  }
+
+  try {
+    const updatedCollections = storage.deleteCard(category as any, cardId);
+    res.json({
+      success: true,
+      message: 'Card deleted successfully.',
+      collections: updatedCollections,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to delete card.' });
+  }
+});
+
+// Reset a category or all card collections to factory defaults
+app.post('/api/dev/cards/reset', (req, res) => {
+  const { currentUsername, category } = req.body;
+  const cleanCaller = (currentUsername || '').toLowerCase().trim();
+  const devStatus = storage.isUserDev(cleanCaller);
+  if (!devStatus.isDev) {
+    return res.status(403).json({ error: 'Only Dev accounts can reset card configurations.' });
+  }
+
+  try {
+    const updatedCollections = storage.resetCardCollections(category);
+    res.json({
+      success: true,
+      message: category ? `Reset ${category.toUpperCase()} cards to factory defaults.` : 'Reset all card pools to factory defaults.',
+      collections: updatedCollections,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to reset cards.' });
+  }
+});
+
 // Playtime heartbeat (Server-side Anti-Sloth Pacing enforcement)
 app.post('/api/playtime/heartbeat', (req, res) => {
   const { sessionId, username, secondsElapsed, isPlaying } = req.body;
@@ -897,7 +1006,13 @@ app.post('/api/cards/execute', async (req, res) => {
   let card = session.activeCards.find(c => c.id === cardId);
   if (!card) {
     // Fallback search across all known pools in case of hand desynchronization
-    const allPool = [...BASE_EARN_CARDS, ...BASE_GROW_CARDS, ...BASE_BOON_CARDS];
+    const collections = storage.getCardCollections();
+    const allPool = [
+      ...collections.earn,
+      ...collections.grow,
+      ...collections.boon,
+      ...collections.sloth.map(s => ({ ...s, category: s.disguisedCategory || 'earn' })),
+    ];
     const foundCard = allPool.find(c => c.id === cardId);
     if (foundCard) {
       card = foundCard;

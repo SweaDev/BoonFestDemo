@@ -27,6 +27,35 @@ export interface CardPayload {
 
 export type SlothArchetype = 'lottery' | 'gambling';
 
+export interface SlothCardDefinition {
+  id: string;
+  title: string;
+  category: 'sloth';
+  archetype: SlothArchetype;
+  disguisedCategory: CardCategory;
+  tier: number;
+  cost: number;
+  rewardDescription: string;
+  description: string;
+  flavor: string;
+  iconName: string;
+  entropySpike: number;
+  entropyRateMultiplier: number;
+  phantomCredits?: number;
+  phantomDurationSec?: number;
+  initialCreditsGiven?: number;
+  prerequisites?: CardPrerequisites;
+}
+
+export type CardManagementTab = 'earn' | 'grow' | 'boon' | 'sloth';
+
+export interface GameCardCollections {
+  earn: CardPayload[];
+  grow: CardPayload[];
+  boon: CardPayload[];
+  sloth: SlothCardDefinition[];
+}
+
 export interface SlothPenalty {
   archetype: SlothArchetype;
   entropySpike: number;            // immediate red shift

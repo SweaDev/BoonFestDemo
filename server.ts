@@ -147,8 +147,14 @@ app.get('/api/session', (req, res) => {
   let username = 'Guest';
 
   if (queryUsername && queryUsername.trim()) {
-    username = queryUsername.trim();
-    isGuest = false;
+    const clean = queryUsername.trim();
+    if (clean.toLowerCase() === 'guest') {
+      username = 'Guest';
+      isGuest = true;
+    } else {
+      username = clean;
+      isGuest = false;
+    }
   }
 
   if (!sessionId || !activeSessions[sessionId] || activeSessions[sessionId].isGameOver || activeSessions[sessionId].hue <= 0) {
@@ -255,15 +261,39 @@ app.post('/api/auth/login', (req, res) => {
 // Authentication / Logout
 app.post('/api/auth/logout', (req, res) => {
   const { sessionId } = req.body;
-  if (sessionId && activeSessions[sessionId]) {
-    activeSessions[sessionId].username = 'Guest';
-    activeSessions[sessionId].isGuest = true;
-  }
+
+  // 1. Check Guest pacing (with last guest's playtime restrictions intact)
   const pacing = storage.checkPacing('Guest');
+
+  // 2. Reset or create a fresh initial game session for Guest
+  const targetSessionId = sessionId && typeof sessionId === 'string' && sessionId.trim()
+    ? sessionId.trim()
+    : `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  const newGuestSession = createNewGameSession(targetSessionId, 'Guest', true, 0);
+  activeSessions[targetSessionId] = newGuestSession;
+
   res.json({
     success: true,
+    sessionId: targetSessionId,
+    username: 'Guest',
+    isGuest: true,
     message: 'Logged out successfully. You are now playing as Guest.',
     pacing,
+    gameState: {
+      credits: newGuestSession.credits,
+      boonPoints: newGuestSession.boonPoints,
+      attributes: newGuestSession.attributes,
+      hue: newGuestSession.hue,
+      entropyDecayRate: newGuestSession.entropyDecayRate,
+      effectiveDecayRate: newGuestSession.effectiveDecayRate,
+      paceMultiplier: newGuestSession.paceMultiplier,
+      isGameOver: false,
+      isPaused: false,
+      redAlertSecondsRemaining: newGuestSession.redAlertSecondsRemaining,
+      activeCards: newGuestSession.activeCards,
+      activePhantoms: newGuestSession.activePhantoms,
+    },
   });
 });
 

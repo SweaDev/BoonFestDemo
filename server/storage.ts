@@ -235,6 +235,17 @@ class StorageManager {
       };
     }
 
+    // Ensure the default Guest user record exists for persistent pacing & lockout tracking
+    if (!parsed.users['guest']) {
+      parsed.users['guest'] = {
+        username: 'Guest',
+        createdAt: Date.now(),
+        runsCount: 0,
+        trophies: [],
+        runs: [],
+      };
+    }
+
     return parsed;
   }
 
@@ -427,7 +438,9 @@ class StorageManager {
   // Dev user and temporarily granted dev users have zero restrictions!
   public checkPacing(userId: string): PlaytimeStats {
     const now = Date.now();
-    const devInfo = this.isUserDev(userId);
+    const cleanUserId = (userId || 'guest').trim().replace(/^@/, '');
+    const isGuest = cleanUserId.toLowerCase() === 'guest';
+    const devInfo = this.isUserDev(cleanUserId);
 
     // Dev users and granted dev status holders bypass all time restrictions
     if (devInfo.isDev) {
@@ -444,7 +457,17 @@ class StorageManager {
       };
     }
 
-    const user = this.data.users[userId.toLowerCase()];
+    const normalizedKey = isGuest ? 'guest' : cleanUserId.toLowerCase();
+    let user = this.data.users[normalizedKey];
+    if (!user && isGuest) {
+      user = this.data.users['guest'] = {
+        username: 'Guest',
+        createdAt: Date.now(),
+        runsCount: 0,
+        trophies: [],
+        runs: [],
+      };
+    }
 
     // Check active explicit lockout
     if (user && user.lockoutUntil && user.lockoutUntil > now) {
@@ -460,7 +483,23 @@ class StorageManager {
       };
     }
 
-    const logs = this.data.playtimeLogs[userId] || [];
+    // Retrieve logs - for guest, merge both 'Guest' and 'guest' keys to preserve all guest history
+    let logs: Array<{ timestamp: number; durationSeconds: number }> = [];
+    if (isGuest) {
+      const g1 = this.data.playtimeLogs['Guest'] || [];
+      const g2 = this.data.playtimeLogs['guest'] || [];
+      const seen = new Set<number>();
+      logs = [...g1, ...g2].filter(l => {
+        if (seen.has(l.timestamp)) return false;
+        seen.add(l.timestamp);
+        return true;
+      });
+      this.data.playtimeLogs['Guest'] = logs;
+      this.data.playtimeLogs['guest'] = logs;
+    } else {
+      logs = this.data.playtimeLogs[cleanUserId] || this.data.playtimeLogs[normalizedKey] || [];
+    }
+
     const window30m = now - 30 * 60 * 1000;
     const window24h = now - 24 * 60 * 60 * 1000;
 
@@ -523,27 +562,34 @@ class StorageManager {
   }
 
   public recordPlaytime(userId: string, seconds: number): PlaytimeStats {
-    // Dev users have zero time restrictions and do not accumulate limiting play logs
-    const devInfo = this.isUserDev(userId);
+    const cleanUserId = (userId || 'guest').trim().replace(/^@/, '');
+    const isGuest = cleanUserId.toLowerCase() === 'guest';
+    const devInfo = this.isUserDev(cleanUserId);
     if (devInfo.isDev) {
-      return this.checkPacing(userId);
+      return this.checkPacing(cleanUserId);
     }
 
     const now = Date.now();
-    if (!this.data.playtimeLogs[userId]) {
-      this.data.playtimeLogs[userId] = [];
+    const storeKey = isGuest ? 'Guest' : cleanUserId;
+
+    if (!this.data.playtimeLogs[storeKey]) {
+      this.data.playtimeLogs[storeKey] = [];
     }
 
     // Clean logs older than 24 hours to prevent memory bloat
     const cutoff24h = now - 24 * 60 * 60 * 1000;
-    this.data.playtimeLogs[userId] = this.data.playtimeLogs[userId].filter(l => l.timestamp >= cutoff24h);
+    this.data.playtimeLogs[storeKey] = this.data.playtimeLogs[storeKey].filter(l => l.timestamp >= cutoff24h);
 
-    this.data.playtimeLogs[userId].push({
+    this.data.playtimeLogs[storeKey].push({
       timestamp: now,
       durationSeconds: Math.min(seconds, 30), // rate-limit single ping
     });
 
-    const pacing = this.checkPacing(userId);
+    if (isGuest) {
+      this.data.playtimeLogs['guest'] = this.data.playtimeLogs['Guest'];
+    }
+
+    const pacing = this.checkPacing(storeKey);
     this.persist();
     return pacing;
   }

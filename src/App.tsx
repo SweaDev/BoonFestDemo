@@ -519,10 +519,55 @@ export default function App() {
         setUsername('Guest');
         setIsGuest(true);
         localStorage.removeItem('boonfest_username');
+        if (data.sessionId) {
+          setSessionId(data.sessionId);
+          localStorage.setItem('boonfest_session_id', data.sessionId);
+        }
+
+        // CRITICAL: Close all open modals & completely dismiss previous user's Game Over screen
+        setShowProfile(false);
+        setShowLeaderboard(false);
+        setShowRules(false);
+        setShowSettings(false);
+        setIsGameOver(false);
+        setGameOverData(null);
+
+        // Reset to initial home screen state
+        if (data.gameState) {
+          setCredits(data.gameState.credits ?? 100);
+          setBoonPoints(data.gameState.boonPoints ?? 0);
+          setAttributes(data.gameState.attributes ?? { mind: 1, body: 1, spirit: 1 });
+          setHue(data.gameState.hue ?? 95);
+          setDecayRate(data.gameState.entropyDecayRate ?? 0.18);
+          setEffectiveDecayRate(data.gameState.effectiveDecayRate ?? 0.18);
+          setPaceMultiplier(data.gameState.paceMultiplier ?? 1.0);
+          setRedAlertSecondsRemaining(data.gameState.redAlertSecondsRemaining ?? 8.0);
+          setActivePhantoms(data.gameState.activePhantoms || []);
+          setActiveCards(data.gameState.activeCards || []);
+        } else {
+          setCredits(100);
+          setBoonPoints(0);
+          setAttributes({ mind: 1, body: 1, spirit: 1 });
+          setHue(95);
+          setDecayRate(0.18);
+          setEffectiveDecayRate(0.18);
+          setPaceMultiplier(1.0);
+          setRedAlertSecondsRemaining(8.0);
+          setActivePhantoms([]);
+          drawCards(data.sessionId || sessionId);
+        }
+
+        setRunElapsedSeconds(0);
+        setIsPaused(false);
+        setFocusedIndex(0);
+        setLastActionImpact(null);
+
+        // Keep last guest's playtime restrictions intact
         if (data.pacing) {
           setPlaytimeStats(data.pacing);
         }
-        addToast('info', 'Logged out successfully. You are now playing as Guest.');
+
+        addToast('info', 'Logged out. Returned to initial home screen as Guest.');
       }
     } catch {
       addToast('error', 'Logout request failed.');

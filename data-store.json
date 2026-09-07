@@ -25,7 +25,7 @@
     "dev": {
       "username": "dev",
       "createdAt": 1788737865913,
-      "runsCount": 19,
+      "runsCount": 20,
       "trophies": [
         {
           "id": "trophy_1788748302458_7h7i",
@@ -59,6 +59,24 @@
         }
       ],
       "runs": [
+        {
+          "runId": "run_1788749584405",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 110,
+          "credits": 30,
+          "boonPoints": 120,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [
+            "lottery",
+            "lottery",
+            "lottery"
+          ],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
         {
           "runId": "run_1788748299858",
           "username": "dev",
@@ -357,9 +375,23 @@
     "fmy": {
       "username": "fmy",
       "createdAt": 1788738103542,
-      "runsCount": 3,
+      "runsCount": 4,
       "trophies": [],
       "runs": [
+        {
+          "runId": "run_1788750107664",
+          "username": "fmy",
+          "isGuest": false,
+          "durationSeconds": 0,
+          "credits": 100,
+          "boonPoints": 150,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 95,
+          "date": "2026-09-07"
+        },
         {
           "runId": "run_1788741197501",
           "username": "fmy",
@@ -438,61 +470,38 @@
           "date": "2026-09-07"
         }
       ]
+    },
+    "guest": {
+      "username": "Guest",
+      "createdAt": 1788750088523,
+      "runsCount": 0,
+      "trophies": [],
+      "runs": [],
+      "lockoutUntil": 0,
+      "lockoutReason": null
     }
   },
   "playtimeLogs": {
     "Guest": [
       {
-        "timestamp": 1788719654387,
-        "durationSeconds": 5
+        "timestamp": 1788750119500,
+        "durationSeconds": 30
       },
       {
-        "timestamp": 1788719659387,
-        "durationSeconds": 5
+        "timestamp": 1788750119502,
+        "durationSeconds": 30
       },
       {
-        "timestamp": 1788719664387,
-        "durationSeconds": 5
+        "timestamp": 1788750119504,
+        "durationSeconds": 30
       },
       {
-        "timestamp": 1788719669391,
-        "durationSeconds": 5
+        "timestamp": 1788750119506,
+        "durationSeconds": 30
       },
       {
-        "timestamp": 1788719674386,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788719679384,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788719684390,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788719689386,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788719694389,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788719699386,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788719704392,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788741230559,
-        "durationSeconds": 5
-      },
-      {
-        "timestamp": 1788741240553,
-        "durationSeconds": 5
+        "timestamp": 1788750119508,
+        "durationSeconds": 30
       }
     ],
     "fmy": [
@@ -976,6 +985,28 @@
         "timestamp": 1788741222658,
         "durationSeconds": 5
       }
+    ],
+    "guest": [
+      {
+        "timestamp": 1788750119500,
+        "durationSeconds": 30
+      },
+      {
+        "timestamp": 1788750119502,
+        "durationSeconds": 30
+      },
+      {
+        "timestamp": 1788750119504,
+        "durationSeconds": 30
+      },
+      {
+        "timestamp": 1788750119506,
+        "durationSeconds": 30
+      },
+      {
+        "timestamp": 1788750119508,
+        "durationSeconds": 30
+      }
     ]
   },
   "leaderboard": [
@@ -1100,5 +1131,8 @@
       "spirit": 2
     }
   ],
-  "devConfig": {}
+  "devConfig": {
+    "password": "Bismillah!!**",
+    "updatedAt": 1788749065223
+  }
 }

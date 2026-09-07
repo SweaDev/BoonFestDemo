@@ -18,7 +18,6 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
-  Users,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DevConfigStatus, DevGrantRecord, PlaytimeStats } from '../types';
@@ -94,9 +93,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [switchUsername, setSwitchUsername] = useState('');
   const [loginPasswordInput, setLoginPasswordInput] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [devLoginPassword, setDevLoginPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [requiresDevPassword, setRequiresDevPassword] = useState(false);
 
   // Guest Registration State
   const [registerUsernameInput, setRegisterUsernameInput] = useState('');
@@ -332,7 +329,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // Handle direct login or quick dev login
+  // Handle login for any account
   const handleQuickLogin = async (userToLogin: string, passwordToUse?: string) => {
     const cleanUser = userToLogin.trim();
     if (!cleanUser) {
@@ -351,11 +348,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       if (success) {
         setSwitchUsername('');
         setLoginPasswordInput('');
-        setDevLoginPassword('');
-        setRequiresDevPassword(false);
         fetchDevConfig();
-      } else if (cleanUser.toLowerCase() === 'dev') {
-        setRequiresDevPassword(true);
       }
     } finally {
       setIsLoggingIn(false);
@@ -689,77 +682,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           </button>
                         </div>
                       </form>
-
-                      {/* Demo Accounts Quick-Select */}
-                      <div className="p-3 rounded-lg bg-[#131418] border border-[#22242a] space-y-2">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-[#f0f2f5] flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5 text-[#00ff95]" />
-                            <span>Demo Accounts (Password: <code className="text-[#00ff95] font-mono">username!</code>)</span>
-                          </span>
-                          <span className="text-[10px] text-[#8a8f98]">Click to select & log in</span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-0.5">
-                          {['demouser1', 'demouser2', 'demouser3', 'demouser4', 'demouser5'].map((demo) => (
-                            <button
-                              key={demo}
-                              type="button"
-                              onClick={() => {
-                                setSwitchUsername(demo);
-                                setLoginPasswordInput(`${demo}!`);
-                                handleQuickLogin(demo, `${demo}!`);
-                              }}
-                              className="px-2 py-1.5 rounded-lg bg-[#1a1c22] hover:bg-[#252832] border border-[#262930] hover:border-[#00ff95]/60 text-xs font-mono text-[#f0f2f5] transition cursor-pointer flex flex-col items-center justify-center gap-0.5 group"
-                            >
-                              <span className="text-[11px] font-bold group-hover:text-[#00ff95] transition">{demo}</span>
-                              <span className="text-[9px] text-[#8a8f98] font-normal">{demo}!</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Dev Shortcut */}
-                      <div className="pt-2 border-t border-[#22242a]/60 flex items-center justify-between">
-                        <div className="text-[11px] text-[#8a8f98]">
-                          Developer account? Use <code className="text-[#00ff95]">dev</code> with dev password.
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSwitchUsername('dev');
-                            setRequiresDevPassword(true);
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-[#22242a] hover:bg-[#2c3038] text-[#00ff95] text-xs font-bold transition cursor-pointer flex items-center gap-1"
-                        >
-                          <Crown className="w-3 h-3 text-[#00ff95]" />
-                          <span>Quick Dev Access</span>
-                        </button>
-                      </div>
-
-                      {requiresDevPassword && (
-                        <div className="p-3 rounded-lg bg-[#131418] border border-[#ffb800]/40 space-y-2">
-                          <span className="text-xs font-semibold text-[#ffb800] flex items-center gap-1.5">
-                            <Lock className="w-3.5 h-3.5" />
-                            Dev Security Password Required
-                          </span>
-                          <div className="flex gap-2">
-                            <input
-                              type="password"
-                              placeholder="Enter Dev Password..."
-                              value={devLoginPassword}
-                              onChange={(e) => setDevLoginPassword(e.target.value)}
-                              className="flex-1 px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
-                            />
-                            <button
-                              onClick={() => handleQuickLogin('dev', devLoginPassword)}
-                              disabled={isLoggingIn || !devLoginPassword.trim()}
-                              className="px-3.5 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer disabled:opacity-50"
-                            >
-                              Authenticate
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -948,63 +870,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     )}
                   </div>
 
-                  {/* Dev User Shortcut / Login */}
-                  {!isMainDev && (
-                    <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-xs font-bold text-[#f0f2f5] flex items-center gap-1.5">
-                            <Crown className="w-3.5 h-3.5 text-[#00ff95]" />
-                            Developer Access
-                          </h4>
-                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                            Switch to the <code className="text-[#00ff95]">dev</code> account to test with zero time restrictions.
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSwitchUsername('dev');
-                            setRequiresDevPassword(true);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer flex items-center gap-1"
-                        >
-                          <LogIn className="w-3.5 h-3.5" />
-                          <span>Dev Login</span>
-                        </button>
-                      </div>
-
-                      {requiresDevPassword && (
-                        <div className="p-3 rounded-lg bg-[#131418] border border-[#ffb800]/40 space-y-2">
-                          <span className="text-xs font-semibold text-[#ffb800] flex items-center gap-1.5">
-                            <Lock className="w-3.5 h-3.5" />
-                            Dev Password Configured
-                          </span>
-                          <p className="text-[11px] text-[#8a8f98]">
-                            The Dev account is password protected. Enter the dev password to proceed.
-                          </p>
-                          <div className="flex gap-2">
-                            <input
-                              type="password"
-                              placeholder="Enter Dev Password..."
-                              value={devLoginPassword}
-                              onChange={(e) => setDevLoginPassword(e.target.value)}
-                              className="flex-1 px-3 py-1.5 rounded-lg bg-[#0c0d10] border border-[#22242a] text-xs text-[#f0f2f5] font-mono focus:outline-none focus:border-[#00ff95]"
-                            />
-                            <button
-                              onClick={() => handleQuickLogin('dev', devLoginPassword)}
-                              disabled={isLoggingIn || !devLoginPassword.trim()}
-                              className="px-3.5 py-1.5 rounded-lg bg-[#00ff95] hover:bg-[#33ffaa] text-[#0c0d10] text-xs font-extrabold transition cursor-pointer disabled:opacity-50"
-                            >
-                              Authenticate
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {/* Switch User to another username (with password) */}
                   <div className="p-4 rounded-xl bg-[#0c0d10] border border-[#22242a] space-y-3">
                     <span className="text-xs font-bold text-[#f0f2f5] block">Switch Account</span>
@@ -1038,20 +903,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <div className="flex items-center justify-between gap-2">
                         <button
                           type="button"
-                          onClick={() => {
-                            setGoogleModalTitle('Switch Account with Google');
-                            setGoogleModalAction('Sign in with Google');
-                            setIsGoogleModalOpen(true);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-[#ffffff] hover:bg-[#f1f3f4] text-[#3c4043] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow"
+                          disabled={true}
+                          title="Switch via Google is temporarily disabled"
+                          className="px-3 py-1.5 rounded-lg bg-[#ffffff]/60 text-[#3c4043]/70 text-xs font-bold transition cursor-not-allowed flex items-center gap-1.5 shadow opacity-60"
                         >
-                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5">
+                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-70">
                             <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
                             <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z" />
                             <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
                             <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
                           </svg>
-                          <span>Switch via Google</span>
+                          <span>Switch via Google (Disabled)</span>
                         </button>
 
                         <button

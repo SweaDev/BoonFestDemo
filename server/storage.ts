@@ -292,6 +292,18 @@ class StorageManager {
       };
     }
 
+    // Ensure dev account user record exists
+    if (!parsed.users['dev']) {
+      parsed.users['dev'] = {
+        username: 'dev',
+        createdAt: Date.now(),
+        runsCount: 0,
+        trophies: [],
+        runs: [],
+        authProvider: 'local',
+      };
+    }
+
     // Ensure the 5 demo user accounts exist: demouser1 through demouser5 with password "${username}!"
     const DEMO_USERS = ['demouser1', 'demouser2', 'demouser3', 'demouser4', 'demouser5'];
     for (const demoName of DEMO_USERS) {

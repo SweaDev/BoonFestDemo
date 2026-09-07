@@ -267,45 +267,12 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
 
-  // Dev user login
-  if (cleanName.toLowerCase() === 'dev') {
-    if (!storage.verifyDevPassword(password)) {
-      return res.status(401).json({
-        error: 'Dev password is required or incorrect.',
-        devPasswordRequired: true,
-      });
-    }
-
-    let devUser = storage.getUser('dev');
-    if (!devUser) {
-      devUser = storage.registerUser('dev');
-    }
-
-    if (sessionId && activeSessions[sessionId]) {
-      activeSessions[sessionId].username = 'dev';
-      activeSessions[sessionId].isGuest = false;
-    }
-
-    const pacing = storage.checkPacing('dev');
-    const devStatus = storage.isUserDev('dev');
-
-    return res.json({
-      success: true,
-      user: {
-        username: 'dev',
-        authProvider: 'local',
-      },
-      pacing,
-      devStatus,
-    });
-  }
-
-  // Normal user login:
-  // Must already exist in database — auto-registration without password is strictly prohibited!
+  // Standard user, demo user, and dev user login:
+  // Must already exist in database
   const user = storage.getUser(cleanName);
   if (!user) {
     return res.status(404).json({
-      error: `Account '${cleanName}' does not exist. Please register a new account first.`,
+      error: `Account '${cleanName}' does not exist. Please check your username.`,
     });
   }
 
@@ -316,14 +283,15 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
 
-  // Legacy user without a password
-  if (!user.passwordHash || !user.salt) {
+  // Check if account has credentials configured
+  const isDevUser = user.username.toLowerCase() === 'dev';
+  if (!isDevUser && (!user.passwordHash || !user.salt)) {
     return res.status(403).json({
-      error: `Account '${user.username}' does not have a password configured. Please register a new secure account.`,
+      error: `Account '${user.username}' does not have a password configured.`,
     });
   }
 
-  // Verify password hash
+  // Verify password (uses PBKDF2 hash for demo/normal users, and dev password for dev)
   const isValid = storage.verifyUserPassword(user, password);
   if (!isValid) {
     return res.status(401).json({

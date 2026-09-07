@@ -161,6 +161,31 @@ class StorageManager {
 
   constructor() {
     this.data = this.loadData();
+    this.cleanDevEntriesFromLeaderboard();
+  }
+
+  public cleanDevEntriesFromLeaderboard(): void {
+    if (!this.data || !this.data.leaderboard) return;
+    const beforeLength = this.data.leaderboard.length;
+    this.data.leaderboard = this.data.leaderboard.filter(entry => {
+      const clean = (entry.username || '').toLowerCase().trim().replace(/^@/, '');
+      if (clean === 'dev') return false;
+      const user = this.data.users[clean];
+      if (user && user.devGrantedUntil && user.devGrantedUntil > Date.now()) return false;
+      return true;
+    });
+
+    // If removing dev entries brought the leaderboard below 10, backfill from INITIAL_LEADERBOARD
+    if (this.data.leaderboard.length < 10) {
+      for (const seed of INITIAL_LEADERBOARD) {
+        if (!this.data.leaderboard.some(e => e.id === seed.id) && this.data.leaderboard.length < 10) {
+          this.data.leaderboard.push(seed);
+        }
+      }
+    }
+
+    this.data.leaderboard.sort((a, b) => b.score - a.score);
+    this.persist();
   }
 
   private loadData(): DBData {
@@ -185,6 +210,20 @@ class StorageManager {
     if (!parsed.leaderboard) parsed.leaderboard = [...INITIAL_LEADERBOARD];
     if (!parsed.devConfig) parsed.devConfig = {};
 
+    // Ensure dev entries are removed on load
+    parsed.leaderboard = parsed.leaderboard.filter(entry => {
+      const clean = (entry.username || '').toLowerCase().trim().replace(/^@/, '');
+      return clean !== 'dev';
+    });
+
+    if (parsed.leaderboard.length < 10) {
+      for (const seed of INITIAL_LEADERBOARD) {
+        if (!parsed.leaderboard.some(e => e.id === seed.id) && parsed.leaderboard.length < 10) {
+          parsed.leaderboard.push(seed);
+        }
+      }
+    }
+
     // Ensure the default Main Dev user exists
     if (!parsed.users['dev']) {
       parsed.users['dev'] = {
@@ -208,11 +247,13 @@ class StorageManager {
   }
 
   public getUser(username: string): UserRecord | null {
-    return this.data.users[username.toLowerCase()] || null;
+    const clean = (username || '').toLowerCase().trim().replace(/^@/, '');
+    return this.data.users[clean] || this.data.users[username.toLowerCase()] || null;
   }
 
   public registerUser(username: string): UserRecord {
-    const key = username.toLowerCase().trim();
+    const clean = (username || '').toLowerCase().trim().replace(/^@/, '');
+    const key = clean;
     if (this.data.users[key]) {
       return this.data.users[key];
     }
@@ -229,7 +270,7 @@ class StorageManager {
   }
 
   public addRun(username: string, run: RunTelemetry, trophy?: Trophy) {
-    const key = username.toLowerCase().trim();
+    const key = (username || '').toLowerCase().trim().replace(/^@/, '');
     if (!this.data.users[key]) {
       this.registerUser(username);
     }
@@ -243,7 +284,16 @@ class StorageManager {
   }
 
   public getLeaderboard(): LeaderboardEntry[] {
-    return this.data.leaderboard.sort((a, b) => b.score - a.score).slice(0, 10);
+    return this.data.leaderboard
+      .filter(entry => {
+        const clean = (entry.username || '').toLowerCase().trim().replace(/^@/, '');
+        if (clean === 'dev') return false;
+        const user = this.data.users[clean];
+        if (user && user.devGrantedUntil && user.devGrantedUntil > Date.now()) return false;
+        return true;
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
   }
 
   public isTop10Score(score: number): { isTop10: boolean; rank: number } {
@@ -261,15 +311,33 @@ class StorageManager {
   }
 
   public insertLeaderboardEntry(entry: LeaderboardEntry) {
+    const clean = (entry.username || '').toLowerCase().trim().replace(/^@/, '');
+    if (clean === 'dev') {
+      console.log(`[Storage] Dev score excluded from global leaderboard for @${entry.username}`);
+      return;
+    }
+    const user = this.data.users[clean];
+    if (user && user.devGrantedUntil && user.devGrantedUntil > Date.now()) {
+      console.log(`[Storage] Temporary dev score excluded from global leaderboard for @${entry.username}`);
+      return;
+    }
+
     this.data.leaderboard.push(entry);
+    this.data.leaderboard = this.data.leaderboard.filter(e => {
+      const c = (e.username || '').toLowerCase().trim().replace(/^@/, '');
+      if (c === 'dev') return false;
+      const u = this.data.users[c];
+      if (u && u.devGrantedUntil && u.devGrantedUntil > Date.now()) return false;
+      return true;
+    });
     this.data.leaderboard.sort((a, b) => b.score - a.score);
-    this.data.leaderboard = this.data.leaderboard.slice(0, 20); // keep top 20
+    this.data.leaderboard = this.data.leaderboard.slice(0, 20); // keep top 20 non-dev
     this.persist();
   }
 
   // Dev System & Authorization
   public isUserDev(username: string): { isDev: boolean; isMainDev: boolean; isTemporaryDev: boolean; devGrantedUntil?: number } {
-    const clean = (username || '').toLowerCase().trim();
+    const clean = (username || '').toLowerCase().trim().replace(/^@/, '');
     if (clean === 'dev') {
       return { isDev: true, isMainDev: true, isTemporaryDev: false };
     }
@@ -350,7 +418,7 @@ class StorageManager {
   public getAllRegisteredUsers(): string[] {
     return Object.values(this.data.users)
       .map(u => u.username)
-      .filter(name => name.toLowerCase() !== 'dev');
+      .filter(name => (name || '').toLowerCase().trim().replace(/^@/, '') !== 'dev');
   }
 
   // Anti-Sloth Pacing Engine:

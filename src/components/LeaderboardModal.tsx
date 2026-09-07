@@ -47,7 +47,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ onClose, onS
             <div>
               <h2 className="text-lg font-bold font-sans text-[#f0f2f5]">Global Altruism Leaderboard</h2>
               <span className="text-xs text-[#8a8f98]">
-                Top 10 Stewards ranked exclusively by generative Boon Points
+                Top 10 Stewards ranked exclusively by generative Boon Points (Dev testing excluded)
               </span>
             </div>
           </div>
@@ -141,6 +141,12 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ onClose, onS
             })}
           </div>
         )}
+
+        {/* Anti-Cheat / Dev Notice Footer */}
+        <div className="pt-2 border-t border-[#22242a] flex items-center justify-between text-[11px] text-[#525866]">
+          <span>Ranked by verified competitive runs</span>
+          <span className="text-[10px] font-mono text-[#8a8f98]">Dev testing runs strictly excluded</span>
+        </div>
       </motion.div>
     </div>
   );

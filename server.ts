@@ -763,13 +763,14 @@ app.post('/api/game/over', async (req, res) => {
 
   session.isGameOver = true;
 
+  const clientTelemetry = req.body.telemetry;
   const telemetry: RunTelemetry = {
     runId: `run_${Date.now()}`,
     username: session.username,
     isGuest: session.isGuest,
     durationSeconds: session.totalRunPlaySeconds || Math.round((Date.now() - session.runStartTime) / 1000),
     credits: session.credits,
-    boonPoints: session.boonPoints,
+    boonPoints: Math.max(session.boonPoints, clientTelemetry?.boonPoints || 0),
     mind: session.attributes.mind,
     body: session.attributes.body,
     spirit: session.attributes.spirit,
@@ -781,35 +782,48 @@ app.post('/api/game/over', async (req, res) => {
   // Generate AI Post-Mortem & Coaching (Gemini Flash)
   const postMortem = await generateAIPostMortem(telemetry);
 
-  // Check Top-10 Leaderboard ranking
+  const devStatus = storage.isUserDev(session.username);
+  const isDev = devStatus.isDev || session.username.toLowerCase().trim().replace(/^@/, '') === 'dev';
+
+  // Check Top-10 Leaderboard ranking against genuine non-dev player leaderboard
   const { isTop10, rank } = storage.isTop10Score(telemetry.boonPoints);
 
   // Guest Top-10 Exception:
   // "If a guest's first run achieves a Top-10 score on the global leaderboard,
   // the game must pause on the game-over screen and require username registration immediately
   // to mint their trophy and save their score to the leaderboard."
-  const requiresRegistration = session.isGuest && (isTop10 || session.gameCount >= 1);
+  // Dev users never require guest registration.
+  const requiresRegistration = session.isGuest && (isTop10 || session.gameCount >= 1) && !isDev;
 
   let trophy = undefined;
 
-  // If score qualifies for Top 10 and player has a registered username, mint trophy artifact!
-  if (isTop10 && !session.isGuest) {
+  // If score qualifies for Top 10:
+  // Normal players and Dev users get full game-over experience with minted trophy artifact.
+  // Dev scores are for testing only and will NEVER be inserted into the actual public leaderboard!
+  if (isTop10) {
     trophy = await generateTrophyArtifact(rank, session.username, telemetry.boonPoints, postMortem.archetypeName);
 
-    storage.addRun(session.username, telemetry, trophy);
-    storage.insertLeaderboardEntry({
-      id: `lead_${Date.now()}`,
-      username: session.username,
-      score: telemetry.boonPoints,
-      runDurationSeconds: telemetry.durationSeconds,
-      date: telemetry.date,
-      trophyImageUrl: trophy.imageUrl,
-      behaviorArchetype: postMortem.archetypeName,
-      boonCount: Math.floor(telemetry.boonPoints / 120),
-      mind: telemetry.mind,
-      body: telemetry.body,
-      spirit: telemetry.spirit,
-    });
+    if (!session.isGuest) {
+      storage.addRun(session.username, telemetry, trophy);
+    }
+
+    if (!isDev && !session.isGuest) {
+      storage.insertLeaderboardEntry({
+        id: `lead_${Date.now()}`,
+        username: session.username,
+        score: telemetry.boonPoints,
+        runDurationSeconds: telemetry.durationSeconds,
+        date: telemetry.date,
+        trophyImageUrl: trophy.imageUrl,
+        behaviorArchetype: postMortem.archetypeName,
+        boonCount: Math.floor(telemetry.boonPoints / 120),
+        mind: telemetry.mind,
+        body: telemetry.body,
+        spirit: telemetry.spirit,
+      });
+    } else if (isDev) {
+      console.log(`[GameOver] Dev testing run by @${session.username} scored ${telemetry.boonPoints} (benchmark Rank #${rank}). Trophy minted for testing, excluded from leaderboard.`);
+    }
   } else if (!session.isGuest) {
     storage.addRun(session.username, telemetry);
   }
@@ -821,6 +835,7 @@ app.post('/api/game/over', async (req, res) => {
     trophy,
     requiresRegistration,
     telemetry,
+    isDev,
   };
 
   res.json(response);
@@ -841,30 +856,35 @@ app.post('/api/game/claim-guest-trophy', async (req, res) => {
     activeSessions[sessionId].isGuest = false;
   }
 
+  const devStatus = storage.isUserDev(cleanName);
+  const isDev = devStatus.isDev || cleanName.toLowerCase().trim().replace(/^@/, '') === 'dev';
+
   const { isTop10, rank } = storage.isTop10Score(telemetry.boonPoints);
   let trophy = undefined;
 
   if (isTop10) {
     trophy = await generateTrophyArtifact(rank, cleanName, telemetry.boonPoints, postMortem?.archetypeName || 'The Ascendant Benefactor');
 
-    storage.insertLeaderboardEntry({
-      id: `lead_${Date.now()}`,
-      username: cleanName,
-      score: telemetry.boonPoints,
-      runDurationSeconds: telemetry.durationSeconds,
-      date: telemetry.date,
-      trophyImageUrl: trophy.imageUrl,
-      behaviorArchetype: postMortem?.archetypeName,
-      boonCount: Math.floor(telemetry.boonPoints / 120),
-      mind: telemetry.mind,
-      body: telemetry.body,
-      spirit: telemetry.spirit,
-    });
+    if (!isDev) {
+      storage.insertLeaderboardEntry({
+        id: `lead_${Date.now()}`,
+        username: cleanName,
+        score: telemetry.boonPoints,
+        runDurationSeconds: telemetry.durationSeconds,
+        date: telemetry.date,
+        trophyImageUrl: trophy.imageUrl,
+        behaviorArchetype: postMortem?.archetypeName,
+        boonCount: Math.floor(telemetry.boonPoints / 120),
+        mind: telemetry.mind,
+        body: telemetry.body,
+        spirit: telemetry.spirit,
+      });
+    }
   }
 
   storage.addRun(cleanName, { ...telemetry, username: cleanName, isGuest: false }, trophy);
 
-  res.json({ success: true, username: cleanName, trophy });
+  res.json({ success: true, username: cleanName, trophy, isTop10, rank: isTop10 ? rank : undefined, isDev });
 });
 
 // Global Leaderboard

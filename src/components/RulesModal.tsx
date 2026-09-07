@@ -120,7 +120,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ onClose }) => {
                 <strong className="text-[#ffb800]">Server Enforcement:</strong> Timers are verified on the server to prevent clock tampering.
               </li>
               <li>
-                <strong className="text-[#00ff95]">Developer Exemption:</strong> The Dev user (<code className="text-[#00ff95]">@dev</code>) and users granted temporary dev status are completely exempt from all time restrictions. The Main Dev can grant other accounts temporary dev privileges from Settings.
+                <strong className="text-[#00ff95]">Developer Exemption:</strong> The Dev user (<code className="text-[#00ff95]">@dev</code>) and users granted temporary dev status are testing roles completely exempt from all time restrictions. They receive the full gameplay experience (including AI post-mortem and trophy benchmark evaluation), but dev scores are strictly excluded from the public leaderboard.
               </li>
             </ul>
           </div>

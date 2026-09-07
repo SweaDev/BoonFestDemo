@@ -761,6 +761,7 @@ export default function App() {
           gameOverData={gameOverData}
           currentUsername={username}
           isGuest={isGuest}
+          isDev={Boolean(playtimeStats?.isDev || username.toLowerCase().trim().replace(/^@/, '') === 'dev')}
           onStartNewRun={handleStartNewRun}
           onRegisterAccount={handleRegisterAccount}
           onClaimGuestTrophy={handleClaimGuestTrophy}

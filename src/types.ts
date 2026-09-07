@@ -177,6 +177,7 @@ export interface GameOverResponse {
   trophy?: Trophy;
   requiresRegistration: boolean;
   telemetry: RunTelemetry;
+  isDev?: boolean;
 }
 
 export interface ExecuteCardResult {

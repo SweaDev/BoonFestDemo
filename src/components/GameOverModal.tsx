@@ -26,6 +26,7 @@ interface GameOverModalProps {
   gameOverData: GameOverResponse;
   currentUsername: string;
   isGuest: boolean;
+  isDev?: boolean;
   onStartNewRun: () => void;
   onRegisterAccount: (username: string) => Promise<boolean>;
   onClaimGuestTrophy: (username: string) => Promise<Trophy | undefined>;
@@ -42,6 +43,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   gameOverData,
   currentUsername,
   isGuest,
+  isDev = false,
   onStartNewRun,
   onRegisterAccount,
   onClaimGuestTrophy,
@@ -54,6 +56,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   isMuted = false,
 }) => {
   const { isTop10, rank, postMortem, trophy: initialTrophy, requiresRegistration, telemetry } = gameOverData;
+  const isDevUser = Boolean(isDev || gameOverData.isDev || currentUsername.toLowerCase().trim().replace(/^@/, '') === 'dev');
   const [trophy, setTrophy] = useState<Trophy | undefined>(initialTrophy);
   const [usernameInput, setUsernameInput] = useState('');
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
@@ -102,9 +105,13 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   };
 
   const handleCopyShare = () => {
-    const text = `🏆 I scored ${telemetry.boonPoints.toLocaleString()} Boon Points in BoonFest! Ranked ${
-      isTop10 ? `#${rank}` : 'Top Tier'
-    } on the Global Altruism Leaderboard as "${postMortem.archetypeName}".\nBalance capital, self-growth, and societal welfare without digital addiction!`;
+    const text = isDevUser
+      ? `🏆 Dev Benchmark Run: Scored ${telemetry.boonPoints.toLocaleString()} Boon Points in BoonFest! Benchmarked at Rank #${
+          isTop10 ? rank : 'Elite'
+        } as "${postMortem.archetypeName}". (Dev testing mode - excluded from public leaderboard)`
+      : `🏆 I scored ${telemetry.boonPoints.toLocaleString()} Boon Points in BoonFest! Ranked ${
+          isTop10 ? `#${rank}` : 'Top Tier'
+        } on the Global Altruism Leaderboard as "${postMortem.archetypeName}".\nBalance capital, self-growth, and societal welfare without digital addiction!`;
 
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -135,8 +142,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             <span className="text-[#8a8f98]">Active Session:</span>
             <span className="font-mono font-bold text-[#f0f2f5] flex items-center gap-1.5">
               {isGuest ? 'Guest User' : `@${currentUsername}`}
-              {currentUsername.toLowerCase() === 'dev' && (
-                <span className="px-1.5 py-0.2 rounded text-[10px] bg-[#00ff95]/15 text-[#00ff95] border border-[#00ff95]/30">
+              {isDevUser && (
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-[#00ff95]/15 text-[#00ff95] border border-[#00ff95]/30">
                   DEV
                 </span>
               )}
@@ -309,10 +316,15 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             </div>
 
             <div className="flex-1 text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+              <div className="flex items-center justify-center sm:justify-start gap-2 mb-1 flex-wrap">
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#00ff95]/15 text-[#00ff95] border border-[#00ff95]/40">
-                  Minted Trophy Artifact
+                  {isDevUser ? 'Minted Trophy Artifact (Dev Benchmark)' : 'Minted Trophy Artifact'}
                 </span>
+                {isDevUser && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono text-[#ffb800] bg-[#ffb800]/10 border border-[#ffb800]/30" title="Dev test runs are excluded from the public leaderboard">
+                    Excluded from Public Leaderboard
+                  </span>
+                )}
                 <span className="text-xs font-mono text-[#8a8f98]">{trophy.date}</span>
               </div>
               <h3 className="text-base font-bold text-[#f0f2f5]">{trophy.title}</h3>

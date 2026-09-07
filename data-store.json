@@ -21,6 +21,423 @@
           "date": "2026-09-06"
         }
       ]
+    },
+    "dev": {
+      "username": "dev",
+      "createdAt": 1788737865913,
+      "runsCount": 19,
+      "trophies": [
+        {
+          "id": "trophy_1788748302458_7h7i",
+          "title": "Elite Leaderboard Rank #1",
+          "description": "Awarded to @dev for achieving 9,999 Boon Points with archetype \"The Vigilant Altruist\".",
+          "rank": 1,
+          "score": 9999,
+          "date": "2026-09-07",
+          "imageUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20400%22%20width%3D%22400%22%20height%3D%22400%22%3E%0A%20%20%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%20%20%3CradialGradient%20id%3D%22bgGlow%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064E3B%22%20stop-opacity%3D%220.9%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022C22%22%20stop-opacity%3D%220.95%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2302140F%22%20stop-opacity%3D%221%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22goldGrad%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23FEF08A%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23F59E0B%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23B45309%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%3Cfilter%20id%3D%22glow%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%226%22%20result%3D%22blur%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeComposite%20in%3D%22SourceGraphic%22%20in2%3D%22blur%22%20operator%3D%22over%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2Ffilter%3E%0A%20%20%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%20%20%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2236%22%20fill%3D%22url(%23bgGlow)%22%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22200%22%20r%3D%22160%22%20fill%3D%22none%22%20stroke%3D%22url(%23goldGrad)%22%20stroke-width%3D%223%22%20opacity%3D%220.4%22%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22200%22%20r%3D%22145%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%228%206%22%20opacity%3D%220.6%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Outer%20Shield%20Wings%20--%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M120%20170%20C100%20130%20110%2080%20150%2090%20C160%20120%20170%20150%20175%20180%20Z%22%20fill%3D%22url(%23goldGrad)%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M280%20170%20C300%20130%20290%2080%20250%2090%20C240%20120%20230%20150%20225%20180%20Z%22%20fill%3D%22url(%23goldGrad)%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Central%20Heraldic%20Emblem%20--%3E%0A%20%20%20%20%20%20%3Cpolygon%20points%3D%22200%2C95%20270%2C140%20270%2C230%20200%2C285%20130%2C230%20130%2C140%22%20fill%3D%22%23064E3B%22%20stroke%3D%22url(%23goldGrad)%22%20stroke-width%3D%226%22%20filter%3D%22url(%23glow)%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Star%20%26%20Rank%20--%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M200%20125%20L212%20158%20L248%20158%20L219%20179%20L230%20212%20L200%20192%20L170%20212%20L181%20179%20L152%20158%20L188%20158%20Z%22%20fill%3D%22url(%23goldGrad)%22%20%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Space%20Grotesk'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22800%22%20font-size%3D%2228%22%20fill%3D%22%23ECFDF5%22%20letter-spacing%3D%222%22%3ETOP%201%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22325%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Plus%20Jakarta%20Sans'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22700%22%20font-size%3D%2216%22%20fill%3D%22%23F59E0B%22%3EBOONFEST%20ELITE%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22350%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Plus%20Jakarta%20Sans'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22500%22%20font-size%3D%2212%22%20fill%3D%22%239CA3AF%22%3E9%2C999%20PTS%20%E2%80%A2%20%40dev%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E",
+          "badgeType": "top10_elite"
+        },
+        {
+          "id": "trophy_1788744162651_yixj",
+          "title": "Elite Leaderboard Rank #4",
+          "description": "Awarded to @dev for achieving 2,210 Boon Points with archetype \"The Disciplined Altruist\".",
+          "rank": 4,
+          "score": 2210,
+          "date": "2026-09-07",
+          "imageUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20400%22%20width%3D%22400%22%20height%3D%22400%22%3E%0A%20%20%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%20%20%3CradialGradient%20id%3D%22bgGlow%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064E3B%22%20stop-opacity%3D%220.9%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022C22%22%20stop-opacity%3D%220.95%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2302140F%22%20stop-opacity%3D%221%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22goldGrad%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236EE7B7%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%2310B981%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23B45309%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%3Cfilter%20id%3D%22glow%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%226%22%20result%3D%22blur%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeComposite%20in%3D%22SourceGraphic%22%20in2%3D%22blur%22%20operator%3D%22over%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2Ffilter%3E%0A%20%20%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%20%20%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2236%22%20fill%3D%22url(%23bgGlow)%22%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22200%22%20r%3D%22160%22%20fill%3D%22none%22%20stroke%3D%22url(%23goldGrad)%22%20stroke-width%3D%223%22%20opacity%3D%220.4%22%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22200%22%20r%3D%22145%22%20fill%3D%22none%22%20stroke%3D%22%2310B981%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%228%206%22%20opacity%3D%220.6%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Outer%20Shield%20Wings%20--%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M120%20170%20C100%20130%20110%2080%20150%2090%20C160%20120%20170%20150%20175%20180%20Z%22%20fill%3D%22url(%23goldGrad)%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M280%20170%20C300%20130%20290%2080%20250%2090%20C240%20120%20230%20150%20225%20180%20Z%22%20fill%3D%22url(%23goldGrad)%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Central%20Heraldic%20Emblem%20--%3E%0A%20%20%20%20%20%20%3Cpolygon%20points%3D%22200%2C95%20270%2C140%20270%2C230%20200%2C285%20130%2C230%20130%2C140%22%20fill%3D%22%23064E3B%22%20stroke%3D%22url(%23goldGrad)%22%20stroke-width%3D%226%22%20filter%3D%22url(%23glow)%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Star%20%26%20Rank%20--%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M200%20125%20L212%20158%20L248%20158%20L219%20179%20L230%20212%20L200%20192%20L170%20212%20L181%20179%20L152%20158%20L188%20158%20Z%22%20fill%3D%22url(%23goldGrad)%22%20%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Space%20Grotesk'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22800%22%20font-size%3D%2228%22%20fill%3D%22%23ECFDF5%22%20letter-spacing%3D%222%22%3ETOP%204%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22325%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Plus%20Jakarta%20Sans'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22700%22%20font-size%3D%2216%22%20fill%3D%22%2310B981%22%3EBOONFEST%20ELITE%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22350%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Plus%20Jakarta%20Sans'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22500%22%20font-size%3D%2212%22%20fill%3D%22%239CA3AF%22%3E2%2C210%20PTS%20%E2%80%A2%20%40dev%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E",
+          "badgeType": "top10_elite"
+        },
+        {
+          "id": "trophy_1788742416258_98z5",
+          "title": "Elite Leaderboard Rank #5",
+          "description": "Awarded to @dev for achieving 1,723 Boon Points with archetype \"The Altruistic Architect\".",
+          "rank": 5,
+          "score": 1723,
+          "date": "2026-09-07",
+          "imageUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20400%22%20width%3D%22400%22%20height%3D%22400%22%3E%0A%20%20%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%20%20%3CradialGradient%20id%3D%22bgGlow%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064E3B%22%20stop-opacity%3D%220.9%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022C22%22%20stop-opacity%3D%220.95%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2302140F%22%20stop-opacity%3D%221%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22goldGrad%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236EE7B7%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%2310B981%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23B45309%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%3Cfilter%20id%3D%22glow%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%226%22%20result%3D%22blur%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeComposite%20in%3D%22SourceGraphic%22%20in2%3D%22blur%22%20operator%3D%22over%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2Ffilter%3E%0A%20%20%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%20%20%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2236%22%20fill%3D%22url(%23bgGlow)%22%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22200%22%20r%3D%22160%22%20fill%3D%22none%22%20stroke%3D%22url(%23goldGrad)%22%20stroke-width%3D%223%22%20opacity%3D%220.4%22%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22200%22%20r%3D%22145%22%20fill%3D%22none%22%20stroke%3D%22%2310B981%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%228%206%22%20opacity%3D%220.6%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Outer%20Shield%20Wings%20--%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M120%20170%20C100%20130%20110%2080%20150%2090%20C160%20120%20170%20150%20175%20180%20Z%22%20fill%3D%22url(%23goldGrad)%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M280%20170%20C300%20130%20290%2080%20250%2090%20C240%20120%20230%20150%20225%20180%20Z%22%20fill%3D%22url(%23goldGrad)%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Central%20Heraldic%20Emblem%20--%3E%0A%20%20%20%20%20%20%3Cpolygon%20points%3D%22200%2C95%20270%2C140%20270%2C230%20200%2C285%20130%2C230%20130%2C140%22%20fill%3D%22%23064E3B%22%20stroke%3D%22url(%23goldGrad)%22%20stroke-width%3D%226%22%20filter%3D%22url(%23glow)%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Star%20%26%20Rank%20--%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M200%20125%20L212%20158%20L248%20158%20L219%20179%20L230%20212%20L200%20192%20L170%20212%20L181%20179%20L152%20158%20L188%20158%20Z%22%20fill%3D%22url(%23goldGrad)%22%20%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Space%20Grotesk'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22800%22%20font-size%3D%2228%22%20fill%3D%22%23ECFDF5%22%20letter-spacing%3D%222%22%3ETOP%205%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22325%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Plus%20Jakarta%20Sans'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22700%22%20font-size%3D%2216%22%20fill%3D%22%2310B981%22%3EBOONFEST%20ELITE%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22350%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Plus%20Jakarta%20Sans'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22500%22%20font-size%3D%2212%22%20fill%3D%22%239CA3AF%22%3E1%2C723%20PTS%20%E2%80%A2%20%40dev%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E",
+          "badgeType": "top10_elite"
+        }
+      ],
+      "runs": [
+        {
+          "runId": "run_1788748299858",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 0,
+          "credits": 100,
+          "boonPoints": 9999,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 95,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788748263593",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 0,
+          "credits": 100,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 95,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788747497313",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 120,
+          "credits": 185,
+          "boonPoints": 120,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [
+            "lottery",
+            "lottery",
+            "lottery",
+            "gambling"
+          ],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788747403498",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 109,
+          "credits": 20,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 2,
+          "spirit": 1,
+          "slothTrapsTriggered": [
+            "lottery",
+            "gambling"
+          ],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788746979233",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 328,
+          "credits": 100,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788746796411",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 153,
+          "credits": 48,
+          "boonPoints": 210,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [
+            "lottery",
+            "lottery",
+            "lottery",
+            "gambling"
+          ],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788746556508",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 258,
+          "credits": 127,
+          "boonPoints": 270,
+          "mind": 2,
+          "body": 2,
+          "spirit": 2,
+          "slothTrapsTriggered": [
+            "lottery",
+            "lottery",
+            "gambling"
+          ],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788746350471",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 236,
+          "credits": 195,
+          "boonPoints": 500,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [
+            "lottery",
+            "gambling",
+            "lottery"
+          ],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788746156658",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 188,
+          "credits": 5,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [
+            "lottery"
+          ],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788745936141",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 360,
+          "credits": 60,
+          "boonPoints": 330,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788745449262",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 135,
+          "credits": 35,
+          "boonPoints": 450,
+          "mind": 1,
+          "body": 3,
+          "spirit": 2,
+          "slothTrapsTriggered": [
+            "gambling",
+            "gambling",
+            "gambling"
+          ],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788744653410",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 324,
+          "credits": 100,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788744160064",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 633,
+          "credits": 797,
+          "boonPoints": 2210,
+          "mind": 4,
+          "body": 3,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788743479236",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 123,
+          "credits": 120,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788742414030",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 493,
+          "credits": 13,
+          "boonPoints": 1723,
+          "mind": 3,
+          "body": 1,
+          "spirit": 2,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788742114628",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 281,
+          "credits": 25,
+          "boonPoints": 120,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788741739253",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 328,
+          "credits": 100,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788741561329",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 189,
+          "credits": 10,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788741367488",
+          "username": "dev",
+          "isGuest": false,
+          "durationSeconds": 224,
+          "credits": 39,
+          "boonPoints": 120,
+          "mind": 2,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        }
+      ]
+    },
+    "fmy": {
+      "username": "fmy",
+      "createdAt": 1788738103542,
+      "runsCount": 3,
+      "trophies": [],
+      "runs": [
+        {
+          "runId": "run_1788741197501",
+          "username": "fmy",
+          "isGuest": false,
+          "durationSeconds": 171,
+          "credits": 5,
+          "boonPoints": 0,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788740872747",
+          "username": "fmy",
+          "isGuest": false,
+          "durationSeconds": 352,
+          "credits": 77,
+          "boonPoints": 713,
+          "mind": 2,
+          "body": 2,
+          "spirit": 3,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-07"
+        },
+        {
+          "runId": "run_1788738099782",
+          "username": "fmy",
+          "isGuest": false,
+          "durationSeconds": 243,
+          "credits": 9,
+          "boonPoints": 0,
+          "mind": 2,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 0,
+          "date": "2026-09-06"
+        }
+      ],
+      "lockoutUntil": 1788742722658,
+      "lockoutReason": "30m_rule"
+    },
+    "tester123": {
+      "username": "tester123",
+      "createdAt": 1788748315828,
+      "runsCount": 1,
+      "trophies": [
+        {
+          "id": "trophy_1788748319059_ijc9",
+          "title": "Elite Leaderboard Rank #1",
+          "description": "Awarded to @tester123 for achieving 8,888 Boon Points with archetype \"The Altruistic Architect\".",
+          "rank": 1,
+          "score": 8888,
+          "date": "2026-09-07",
+          "imageUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20400%22%20width%3D%22400%22%20height%3D%22400%22%3E%0A%20%20%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%20%20%3CradialGradient%20id%3D%22bgGlow%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064E3B%22%20stop-opacity%3D%220.9%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022C22%22%20stop-opacity%3D%220.95%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2302140F%22%20stop-opacity%3D%221%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22goldGrad%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23FEF08A%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23F59E0B%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23B45309%22%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%3Cfilter%20id%3D%22glow%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%226%22%20result%3D%22blur%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3CfeComposite%20in%3D%22SourceGraphic%22%20in2%3D%22blur%22%20operator%3D%22over%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2Ffilter%3E%0A%20%20%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%20%20%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2236%22%20fill%3D%22url(%23bgGlow)%22%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22200%22%20r%3D%22160%22%20fill%3D%22none%22%20stroke%3D%22url(%23goldGrad)%22%20stroke-width%3D%223%22%20opacity%3D%220.4%22%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22200%22%20r%3D%22145%22%20fill%3D%22none%22%20stroke%3D%22%23F59E0B%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%228%206%22%20opacity%3D%220.6%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Outer%20Shield%20Wings%20--%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M120%20170%20C100%20130%20110%2080%20150%2090%20C160%20120%20170%20150%20175%20180%20Z%22%20fill%3D%22url(%23goldGrad)%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M280%20170%20C300%20130%20290%2080%20250%2090%20C240%20120%20230%20150%20225%20180%20Z%22%20fill%3D%22url(%23goldGrad)%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Central%20Heraldic%20Emblem%20--%3E%0A%20%20%20%20%20%20%3Cpolygon%20points%3D%22200%2C95%20270%2C140%20270%2C230%20200%2C285%20130%2C230%20130%2C140%22%20fill%3D%22%23064E3B%22%20stroke%3D%22url(%23goldGrad)%22%20stroke-width%3D%226%22%20filter%3D%22url(%23glow)%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3C!--%20Star%20%26%20Rank%20--%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M200%20125%20L212%20158%20L248%20158%20L219%20179%20L230%20212%20L200%20192%20L170%20212%20L181%20179%20L152%20158%20L188%20158%20Z%22%20fill%3D%22url(%23goldGrad)%22%20%2F%3E%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Space%20Grotesk'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22800%22%20font-size%3D%2228%22%20fill%3D%22%23ECFDF5%22%20letter-spacing%3D%222%22%3ETOP%201%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22325%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Plus%20Jakarta%20Sans'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22700%22%20font-size%3D%2216%22%20fill%3D%22%23F59E0B%22%3EBOONFEST%20ELITE%3C%2Ftext%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22200%22%20y%3D%22350%22%20text-anchor%3D%22middle%22%20font-family%3D%22'Plus%20Jakarta%20Sans'%2C%20system-ui%2C%20sans-serif%22%20font-weight%3D%22500%22%20font-size%3D%2212%22%20fill%3D%22%239CA3AF%22%3E8%2C888%20PTS%20%E2%80%A2%20%40tester123%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E",
+          "badgeType": "top10_elite"
+        }
+      ],
+      "runs": [
+        {
+          "runId": "run_1788748315835",
+          "username": "tester123",
+          "isGuest": false,
+          "durationSeconds": 0,
+          "credits": 100,
+          "boonPoints": 8888,
+          "mind": 1,
+          "body": 1,
+          "spirit": 1,
+          "slothTrapsTriggered": [],
+          "entropyAtEnd": 95,
+          "date": "2026-09-07"
+        }
+      ]
     }
   },
   "playtimeLogs": {
@@ -67,6 +484,496 @@
       },
       {
         "timestamp": 1788719704392,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741230559,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741240553,
+        "durationSeconds": 5
+      }
+    ],
+    "fmy": [
+      {
+        "timestamp": 1788737981624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788737986625,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788737991623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788737996624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738001631,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738006624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738011626,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738016628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738021627,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738026627,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738031630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738036627,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738041624,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738046631,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738051625,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738056623,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738061632,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738066627,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738071630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738076628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738081634,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738086632,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738091627,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738096634,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738121629,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738126628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738131628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738136630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738141626,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738146628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738151629,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738156630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738161627,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738166629,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738171632,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738176627,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738181630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738186628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738191628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738196630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738201632,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738206632,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738211636,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738216632,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738221634,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738226630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738231631,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738236632,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738241630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738246635,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738251633,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738256629,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738261633,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738266628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738271631,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738276628,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738281631,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738286630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738291630,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788738296629,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788739898514,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788739958557,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740018531,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740078537,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740140011,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740198548,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740258541,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740318590,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740378551,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740438546,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740499980,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740558597,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740618547,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740678612,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740738565,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740747965,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740752652,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740757655,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740762656,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740767674,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740772652,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740777650,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740782653,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740787670,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740792655,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740797657,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740802655,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740807658,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740812669,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740817661,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740822653,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740827656,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740832654,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740837659,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740842663,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740847655,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740852656,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740857660,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740862655,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740867658,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788740872658,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741112651,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741117650,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741122651,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741127651,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741132652,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741137649,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741142650,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741147653,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741152653,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741157651,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741162653,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741167651,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741172649,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741177651,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741182652,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741187653,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741192652,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741217655,
+        "durationSeconds": 5
+      },
+      {
+        "timestamp": 1788741222658,
         "durationSeconds": 5
       }
     ]
@@ -192,5 +1099,6 @@
       "body": 2,
       "spirit": 2
     }
-  ]
+  ],
+  "devConfig": {}
 }

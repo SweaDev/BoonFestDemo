@@ -19,8 +19,9 @@ import { RulesModal } from './components/RulesModal';
 import { SettingsModal } from './components/SettingsModal';
 import { NotificationToast, ToastMessage } from './components/NotificationToast';
 import { SocietyBackground, ActionImpact } from './components/SocietyBackground';
+import { PauseModal } from './components/PauseModal';
 import { sounds } from './lib/sound';
-import { Sparkles, HeartHandshake, Shield, AlertTriangle } from 'lucide-react';
+import { Sparkles, HeartHandshake, Shield, AlertTriangle, Play, Pause } from 'lucide-react';
 
 export default function App() {
   // Session & User State
@@ -48,6 +49,7 @@ export default function App() {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [activePhantoms, setActivePhantoms] = useState<ActivePhantomCredit[]>([]);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [lastActionImpact, setLastActionImpact] = useState<ActionImpact | null>(null);
 
@@ -74,6 +76,8 @@ export default function App() {
   isLockedOutRef.current = playtimeStats.isLockedOut;
   const isGameOverRef = useRef(isGameOver);
   isGameOverRef.current = isGameOver;
+  const isPausedRef = useRef(isPaused);
+  isPausedRef.current = isPaused;
 
   const addToast = (type: ToastMessage['type'], message: string) => {
     const id = `toast_${Date.now()}_${Math.random()}`;
@@ -119,6 +123,10 @@ export default function App() {
             return;
           }
 
+          if (data.gameState.isPaused !== undefined) {
+            setIsPaused(data.gameState.isPaused);
+          }
+
           setCredits(data.gameState.credits);
           setBoonPoints(data.gameState.boonPoints);
           setAttributes(data.gameState.attributes);
@@ -162,12 +170,69 @@ export default function App() {
     }
   };
 
-  // 1-second Entropy Tick synchronization
-  useEffect(() => {
+  // Toggle Pause / Resume
+  const handleTogglePause = async (explicitState?: boolean) => {
     if (isGameOver || playtimeStats.isLockedOut) return;
 
+    const nextState = explicitState !== undefined ? explicitState : !isPaused;
+    setIsPaused(nextState);
+    if (nextState) {
+      sounds.playPause();
+      addToast('info', 'Game Paused. Press P or Space to resume.');
+    } else {
+      sounds.playResume();
+      addToast('info', 'Game Resumed.');
+    }
+
+    if (sessionId) {
+      try {
+        await fetch('/api/game/pause', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, isPaused: nextState }),
+        });
+      } catch (err) {
+        console.error('Failed to sync pause state:', err);
+      }
+    }
+  };
+
+  // Global keyboard shortcuts for Pause / Resume
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Don't capture keys if typing in form inputs
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        handleTogglePause();
+      } else if (e.key === 'Escape') {
+        if (showRules) setShowRules(false);
+        else if (showSettings) setShowSettings(false);
+        else if (showLeaderboard) setShowLeaderboard(false);
+        else if (showProfile) setShowProfile(false);
+        else if (!isGameOver && !playtimeStats.isLockedOut) {
+          e.preventDefault();
+          handleTogglePause();
+        }
+      } else if ((e.key === ' ' || e.key === 'Enter') && isPausedRef.current) {
+        e.preventDefault();
+        handleTogglePause(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isPaused, isGameOver, playtimeStats.isLockedOut, showRules, showSettings, showLeaderboard, showProfile, sessionId]);
+
+  // 1-second Entropy Tick synchronization
+  useEffect(() => {
+    if (isGameOver || playtimeStats.isLockedOut || isPaused) return;
+
     const tickInterval = setInterval(async () => {
-      if (!sessionId || isGameOverRef.current || isLockedOutRef.current) return;
+      if (!sessionId || isGameOverRef.current || isLockedOutRef.current || isPausedRef.current) return;
 
       try {
         const res = await fetch('/api/game/tick', {
@@ -199,12 +264,12 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(tickInterval);
-  }, [sessionId, isGameOver, playtimeStats.isLockedOut]);
+  }, [sessionId, isGameOver, playtimeStats.isLockedOut, isPaused]);
 
   // 5-second Playtime Heartbeat (Authoritative Server-side Anti-Sloth Pacing)
   useEffect(() => {
     const heartbeatInterval = setInterval(async () => {
-      const isPlaying = !isGameOverRef.current && !isLockedOutRef.current;
+      const isPlaying = !isGameOverRef.current && !isLockedOutRef.current && !isPausedRef.current;
       try {
         const res = await fetch('/api/playtime/heartbeat', {
           method: 'POST',
@@ -250,7 +315,12 @@ export default function App() {
 
   // Execute Card action
   const handleExecuteCard = async (card: CardPayload) => {
-    if (isExecuting || isGameOver || playtimeStats.isLockedOut) return;
+    if (isExecuting || isGameOver || playtimeStats.isLockedOut || isPaused) {
+      if (isPaused) {
+        addToast('info', 'Game is paused. Click Resume or press P to resume.');
+      }
+      return;
+    }
     setIsExecuting(true);
 
     try {
@@ -361,6 +431,7 @@ export default function App() {
         setPaceMultiplier(data.gameState.paceMultiplier ?? 1.0);
         setRunElapsedSeconds(0);
         setIsGameOver(false);
+        setIsPaused(false);
         setGameOverData(null);
         setFocusedIndex(0);
         addToast('info', 'New run started! Balance capital, self-growth, and societal welfare.');
@@ -516,7 +587,9 @@ export default function App() {
         playtimeStats={playtimeStats}
         activePhantoms={activePhantoms}
         isMuted={isMuted}
+        isPaused={isPaused}
         onToggleMute={() => setIsMuted(sounds.toggleMute())}
+        onTogglePause={() => handleTogglePause()}
         onOpenProfile={() => {
           setProfileTargetUser(username);
           setShowProfile(true);
@@ -591,6 +664,19 @@ export default function App() {
                 (-{effectiveDecayRate.toFixed(2)}°/s)
               </span>
             </div>
+
+            {/* Paused State Indicator Badge */}
+            {isPaused && (
+              <button
+                id="btn-hud-resume-pill"
+                onClick={() => handleTogglePause(false)}
+                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border border-[#00ff95]/50 bg-[#00ff95]/15 text-[#00ff95] text-[11px] font-mono font-bold cursor-pointer hover:bg-[#00ff95]/25 transition shadow-[0_0_10px_rgba(0,255,149,0.2)] animate-pulse"
+                title="Game is paused. Click or press P to resume."
+              >
+                <Play className="w-3 h-3 fill-current" />
+                <span>PAUSED (Click or Press P)</span>
+              </button>
+            )}
           </div>
           <span className="text-[11px] text-[#525866] max-w-sm mt-1">
             Starts slow and speeds up over time. Enact societal Boons to recover toward 120° emerald flourishing.
@@ -606,6 +692,8 @@ export default function App() {
           onFocusCard={(idx) => setFocusedIndex(idx)}
           onExecuteCard={handleExecuteCard}
           isExecuting={isExecuting}
+          isPaused={isPaused}
+          onTogglePause={() => handleTogglePause()}
         />
       </main>
 
@@ -651,6 +739,21 @@ export default function App() {
           }}
         />
       )}
+
+      {/* In-Game Pause Modal */}
+      <PauseModal
+        isOpen={isPaused && !isGameOver && !playtimeStats.isLockedOut}
+        onResume={() => handleTogglePause(false)}
+        onRestart={handleStartNewRun}
+        onOpenRules={() => setShowRules(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        hue={hue}
+        credits={credits}
+        boonPoints={boonPoints}
+        attributes={attributes}
+        runElapsedSeconds={runElapsedSeconds}
+        paceMultiplier={paceMultiplier}
+      />
 
       {/* Game Over Screen */}
       {isGameOver && gameOverData && (

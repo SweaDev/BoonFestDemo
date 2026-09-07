@@ -17,6 +17,8 @@ import {
   LogOut,
   Crown,
   ShieldCheck,
+  Pause,
+  Play,
 } from 'lucide-react';
 import { ActivePhantomCredit, PlayerAttributes, PlaytimeStats } from '../types';
 
@@ -30,7 +32,9 @@ interface HeaderBarProps {
   playtimeStats: PlaytimeStats;
   activePhantoms: ActivePhantomCredit[];
   isMuted: boolean;
+  isPaused: boolean;
   onToggleMute: () => void;
+  onTogglePause: () => void;
   onOpenProfile: () => void;
   onOpenLeaderboard: () => void;
   onOpenRules: () => void;
@@ -48,7 +52,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   playtimeStats,
   activePhantoms,
   isMuted,
+  isPaused,
   onToggleMute,
+  onTogglePause,
   onOpenProfile,
   onOpenLeaderboard,
   onOpenRules,
@@ -263,6 +269,21 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               <LogOut className="w-3.5 h-3.5" />
             </button>
           )}
+
+          {/* Pause / Resume Toggle Button */}
+          <button
+            id="btn-header-pause-toggle"
+            onClick={onTogglePause}
+            className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border text-xs font-bold transition cursor-pointer ${
+              isPaused
+                ? 'border-[#00ff95]/60 bg-[#00ff95]/15 text-[#00ff95] hover:bg-[#00ff95]/25 shadow-[0_0_12px_rgba(0,255,149,0.25)] animate-pulse'
+                : 'border-[#22242a] bg-[#1a1c22] hover:bg-[#252830] text-[#f0f2f5]'
+            }`}
+            title={isPaused ? 'Resume Game (P or Space)' : 'Pause Game (P or Space)'}
+          >
+            {isPaused ? <Play className="w-3.5 h-3.5 fill-current" /> : <Pause className="w-3.5 h-3.5 fill-current" />}
+            <span className="hidden sm:inline">{isPaused ? 'Resume' : 'Pause'}</span>
+          </button>
 
           {/* Audio Mute Toggle */}
           <button

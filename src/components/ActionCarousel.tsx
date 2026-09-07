@@ -12,6 +12,8 @@ interface ActionCarouselProps {
   onFocusCard: (index: number) => void;
   onExecuteCard: (card: CardPayload) => void;
   isExecuting: boolean;
+  isPaused?: boolean;
+  onTogglePause?: () => void;
 }
 
 export const ActionCarousel: React.FC<ActionCarouselProps> = ({
@@ -22,14 +24,22 @@ export const ActionCarousel: React.FC<ActionCarouselProps> = ({
   onFocusCard,
   onExecuteCard,
   isExecuting,
+  isPaused,
+  onTogglePause,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard navigation: Left/Right arrows, Spacebar
+  // Keyboard navigation: Left/Right arrows, Spacebar, P (Pause)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't capture keys if an input field is focused (e.g. registration modal)
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        onTogglePause?.();
         return;
       }
 
@@ -45,7 +55,9 @@ export const ActionCarousel: React.FC<ActionCarouselProps> = ({
         sounds.playCardBrowse();
       } else if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
-        if (cards[focusedIndex] && !isExecuting) {
+        if (isPaused) {
+          onTogglePause?.();
+        } else if (cards[focusedIndex] && !isExecuting) {
           onExecuteCard(cards[focusedIndex]);
         }
       }
@@ -53,7 +65,7 @@ export const ActionCarousel: React.FC<ActionCarouselProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusedIndex, cards, isExecuting, onFocusCard, onExecuteCard]);
+  }, [focusedIndex, cards, isExecuting, isPaused, onFocusCard, onExecuteCard, onTogglePause]);
 
   // Smoothly center the focused card in the horizontal container
   useEffect(() => {

@@ -130,9 +130,11 @@ export const RulesModal: React.FC<RulesModalProps> = ({ onClose }) => {
             <h3 className="text-xs font-bold text-[#f0f2f5] uppercase tracking-wider mb-2">
               Carousel & Keyboard Controls
             </h3>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
               <div><strong className="text-[#f0f2f5]">Browse Carousel:</strong> Mouse wheel, swipe, or <kbd className="px-1.5 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">←</kbd> <kbd className="px-1.5 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">→</kbd> keys</div>
-              <div><strong className="text-[#f0f2f5]">Enact Card:</strong> Click, tap, or press <kbd className="px-2 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">Space</kbd></div>
+              <div><strong className="text-[#f0f2f5]">Enact Card:</strong> Click, tap, or press <kbd className="px-2 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">Space</kbd> or <kbd className="px-1.5 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">Enter</kbd></div>
+              <div><strong className="text-[#00ff95]">Pause / Resume:</strong> Click <strong className="text-[#00ff95]">Pause</strong> in header or press <kbd className="px-1.5 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">P</kbd> or <kbd className="px-1.5 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">Esc</kbd></div>
+              <div><strong className="text-[#00ff95]">Resume while Paused:</strong> Press <kbd className="px-1.5 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">Space</kbd>, <kbd className="px-1.5 py-0.2 rounded bg-[#1a1c22] border border-[#2c2f38] font-mono text-[#f0f2f5]">P</kbd>, or click Resume</div>
             </div>
           </div>
         </div>

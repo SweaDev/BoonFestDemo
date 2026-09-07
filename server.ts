@@ -380,7 +380,9 @@ app.post('/api/playtime/heartbeat', (req, res) => {
   // Update session elapsed time
   if (sessionId && activeSessions[sessionId]) {
     const session = activeSessions[sessionId];
-    session.totalRunPlaySeconds += secondsElapsed;
+    if (isPlaying && !session.isPaused) {
+      session.totalRunPlaySeconds += secondsElapsed;
+    }
 
     // Process phantom credit timeouts
     const now = Date.now();
@@ -474,6 +476,10 @@ app.post('/api/cards/execute', async (req, res) => {
         paceMultiplier: session.paceMultiplier,
       },
     });
+  }
+
+  if (session.isPaused) {
+    return res.status(400).json({ error: 'Game is currently paused. Resume to enact actions.' });
   }
 
   let card = session.activeCards.find(c => c.id === cardId);
@@ -725,6 +731,25 @@ app.post('/api/game/tick', (req, res) => {
     paceMultiplier,
     runElapsedSeconds: Math.round(session.totalRunPlaySeconds),
     isGameOver: isGameOverNow,
+  });
+});
+
+// Pause / Resume game endpoint
+app.post('/api/game/pause', (req, res) => {
+  const { sessionId, isPaused } = req.body;
+  const session = sessionId ? activeSessions[sessionId] : null;
+  if (!session) {
+    return res.status(404).json({ error: 'Session not found.' });
+  }
+  if (session.isGameOver) {
+    return res.status(400).json({ error: 'Cannot pause a finished game.' });
+  }
+
+  session.isPaused = typeof isPaused === 'boolean' ? isPaused : !session.isPaused;
+
+  res.json({
+    success: true,
+    isPaused: session.isPaused,
   });
 });
 

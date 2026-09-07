@@ -562,7 +562,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
-        className="w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl border border-[#22242a] bg-[#131418] shadow-[0_24px_64px_rgba(0,0,0,0.85)] overflow-hidden"
+        className="w-full max-w-5xl xl:max-w-6xl max-h-[92vh] flex flex-col rounded-2xl border border-[#22242a] bg-[#131418] shadow-[0_24px_64px_rgba(0,0,0,0.85)] overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#22242a] bg-[#0c0d10]/60">
@@ -596,10 +596,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-[#22242a] bg-[#0e0f13] px-4 gap-2 text-xs font-semibold">
+        <div className="flex border-b border-[#22242a] bg-[#0e0f13] px-4 gap-1.5 sm:gap-2 text-xs font-semibold overflow-x-auto scrollbar-none shrink-0">
           <button
             onClick={() => setActiveTab('account')}
-            className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+            className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               activeTab === 'account'
                 ? 'border-[#00ff95] text-[#00ff95]'
                 : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
@@ -612,7 +612,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {isMainDev && (
             <button
               onClick={() => setActiveTab('users')}
-              className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+              className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                 activeTab === 'users'
                   ? 'border-[#00ff95] text-[#00ff95]'
                   : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
@@ -632,7 +632,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <>
               <button
                 onClick={() => setActiveTab('cards')}
-                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'cards'
                     ? 'border-[#00ff95] text-[#00ff95]'
                     : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
@@ -647,7 +647,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <button
                 onClick={() => setActiveTab('ai')}
-                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'ai'
                     ? 'border-[#00ff95] text-[#00ff95]'
                     : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
@@ -666,7 +666,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <>
               <button
                 onClick={() => setActiveTab('dev_security')}
-                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'dev_security'
                     ? 'border-[#00ff95] text-[#00ff95]'
                     : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
@@ -683,7 +683,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <button
                 onClick={() => setActiveTab('dev_grants')}
-                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                className={`py-3 px-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'dev_grants'
                     ? 'border-[#00ff95] text-[#00ff95]'
                     : 'border-transparent text-[#8a8f98] hover:text-[#f0f2f5]'
